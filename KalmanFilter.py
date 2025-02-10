@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
 from flirpy.camera.lepton import Lepton 
+import trackerclass
+from trackerclass import Tracker
 
 with Lepton() as camera:
   camera.setup_video()
@@ -53,16 +55,17 @@ with Lepton() as camera:
     T, threshold = cv2.threshold(img, 3000, 5000, cv2.THRESH_BINARY)
     img2 = 255*(img - img.min())/(img.max()-img.min())
     imgu = img2.astype(np.uint8)
-    if FirstRunTest is True and imgu is not None:
-      masku = select_roi(imgu)
-      mask = masku.astype(np.float32)
-      FirstRunTest = False
-    if FirstRunTest is False:
-      masked = cv2.bitwise_and(threshold, mask)
-    frame = masked.astype(np.uint8)
+    frame = imgu
+##    if FirstRunTest is True and imgu is not None:
+ #     masku = select_roi(imgu)
+ #     mask = masku.astype(np.float32)
+ #     FirstRunTest = False
+ #   if FirstRunTest is False:
+ #     masked = cv2.bitwise_and(threshold, mask)
+  #  frame = masked.astype(np.uint8)
 
     # Apply the KNN background subtractor to get the foreground mask.
-    fg_mask = bg_subtractor.apply(frame)
+   # fg_mask = bg_subtractor.apply(frame)
 
     # Let the background subtractor build up a history before further processing.
     if num_history_frames_populated < history_length:
@@ -70,17 +73,18 @@ with Lepton() as camera:
         continue
 
     # Create the thresholded image using the foreground mask.
-    _, thresh = cv2.threshold(fg_mask, 127, 255, cv2.THRESH_BINARY)
+    #_, thresh = cv2.threshold(fg_mask, 127, 255, cv2.THRESH_BINARY)
 
     # Perform erosion and dilation to improve the thresholded image.
-    cv2.erode(thresh, erode_kernel, thresh, iterations=2)
-    cv2.dilate(thresh, dilate_kernel, thresh, iterations=2)
+   # cv2.erode(thresh, erode_kernel, thresh, iterations=2)
+   # cv2.dilate(thresh, dilate_kernel, thresh, iterations=2)
 
     # Find contours in the thresholded image.
-    contours, hier = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, hier = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # Convert the frame to HSV color space for tracking.
-    hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    hsv_frame_color = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+    hsv_frame = cv2.cvtColor(hsv_frame_color, cv2.COLOR_BGR2HSV)
 
     # Draw red rectangles around large contours.
     # If there are no blobs being tracked yet, create new trackers.
@@ -92,18 +96,20 @@ with Lepton() as camera:
             # Get the bounding rectangle coordinates.
             (x, y, w, h) = cv2.boundingRect(c)
             
+            
             # Draw a rectangle around the contour.
             cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 1)
             
             # If no senators are being tracked yet, create a new tracker for each contour.
             if should_initialize_blobs:
+                print(frame.shape)
                 blobs.append(Tracker(id, hsv_frame, (x, y, w, h)))
-                
         id += 1
 
     # Update the tracking of each senator.
     for blob in blobs:
-        blobs.update(frame, hsv_frame)
+        print(blob)
+        blob.update(frame, hsv_frame)
 
     # Display the frame with senators being tracked.
     cv2.imshow('Blobs Tracked', frame)
