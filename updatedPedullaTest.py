@@ -26,7 +26,8 @@ with Lepton() as camera:
 		else:
 			mask = np.ones_like(image)
 			return mask	
-			
+	def subtract_lists(list1, list2):
+		return [x-y for x, y in zip(list1, list2)]
 	def SimpleBlob(frame):
 		contours, hierarchy = cv.findContours(frame, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 		cx_all = []
@@ -51,7 +52,7 @@ with Lepton() as camera:
 					cx_old = cx_all
 					cy_old = cy_all
 				else:
-					blob_velo = np.sqrt((cx_all-cx_old)^2+(cy_all-cy_old)^2)
+					blob_velo = np.sqrt(np.square(subtract_lists(cx_all, cx_old))+np.square(subtract_lists(cy_all, cy_old)))
 					threshold = 7
 					result = blob_velo[blob_velo < threshold] 
 					if len(result)>=1:
