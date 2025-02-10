@@ -1,8 +1,8 @@
 import cv2
 import numpy as np
 from flirpy.camera.lepton import Lepton 
-import trackerclass
-from trackerclass import Tracker
+import KalmanFilter
+from KalmanFilter import KalmanFilter
 
 with Lepton() as camera:
 	camera.setup_video() #use Lepton camera
@@ -30,35 +30,22 @@ with Lepton() as camera:
 			return mask #return the mask 
 			
 	def detect_objects(frame): #detecting objects function
-		bbox = [] #empty list of box coordinates 
+		circles = [] #empty list of box coordinates 
 		contours, hier = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) #find contours in given frame 
 		for c in contours: #go through each contour
 			# Check if the contour area is larger than a threshold.
 			if cv2.contourArea(c) > 90: #if contour is big enough 
-				# Get the bounding rectangle coordinates.
-				[x, y, w, h] = cv2.boundingRect(c) #find bounding rectangular coords and save 
-				bbox.append((x,y,w,h)) #add coords to the box coordinate list
-		if len(bbox) > 0: #if there are any blobs
-			bbox = np.array(bbox) #create an array out of the list
-		return bbox #return list of coordinates 
-
-	# def draw_bbox(frame):
-		# bbox = []
-		# contours, hier = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-		# for c in contours:
-			# mask = np.zeros_like(frame)
-			# contourSize = cv2.contourArea(c)
-			# # Check if the contour area is larger than a threshold.
-			# if cv2.contourArea(c) > 90:
-				# cv2.fillPoly(mask,[c],1)
-				# # draw rectangle coordinates.
-				# cv2.boundingRect(c)
-		# simpleblobcolor = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
-		# return simpleblobcolor
+				# Get the bounding circle coordinates.
+				(x,y), radius = cv2.minEnclosingCircle(c) #find bounding circle coords and save 
+				circles.append((x,y))) #add coords to the circle coordinate list
+		if len(circles) > 0: #if there are any blobs
+			circles = np.array(circles) #create an array out of the list
+		return circles #return list of coordinates 
 
 
-	blobs = []
+
 	FirstRunTest = True
+	KF = KalmanFilter(0.1, 1, 1, 1, 0.1, 0.1)
 	
 	while(True):
 		
@@ -76,9 +63,18 @@ with Lepton() as camera:
 		cv2.imshow('mask', masked)
 		masked2 = masked.astype(np.uint8)
 		detections = detect_objects(masked2)
-		print(detections)
-		#simpleblob = draw_bbox(masked2)
-		
+		if len(detections) > 0:
+			cv2.circle(masked2, (int(circles[0][0]), int(circles[0][0])), 10, (0,191,255), 2) #draw circle around blob
+			(x, y) = KF.predict() #predict where it is going
+			cv2.rectangle(masked2, (int(x-15), int(y-15), (int(x + 15)), int(y+15)), (255, 0, 0, 2)) # draw rectangle at predicted pos
+			(x1, y1) = KF.update(circles[0]) #update
+			cv2.rectangle(masked2, (int(x1 - 15), int(y1 - 15)), (int(x1 + 15), int(y1 + 15)), (0, 0, 255), 2) #draw rectangle at estimated pos
+			cv2.putText(frame, "Estimated Position", (int(x1 + 15), int(y1 + 10)), 0, 0.5, (0, 0, 255), 2)
+			cv2.putText(frame, "Predicted Position", (int(x + 15), int(y)), 0, 0.5, (255, 0, 0), 2)
+			cv2.putText(frame, "Measured Position", (int(centers[0][0] + 15), int(centers[0][1] - 15)), 0, 0.5, (0,191,255), 2)
+			
+
+
 		
 		#cv2.imshow('Blobs Tracked', masked2)
 
