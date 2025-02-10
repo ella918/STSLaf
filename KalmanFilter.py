@@ -1,122 +1,83 @@
-import cv2
+# from https://github.com/RahmadSadli/2-D-Kalman-Filter/blob/master/KalmanFilter.py
+
 import numpy as np
-from flirpy.camera.lepton import Lepton 
-import trackerclass
-from trackerclass import Tracker
+import matplotlib.pyplot as plt
 
-with Lepton() as camera:
-  camera.setup_video()
+class KalmanFilter(object):
+    def __init__(self, dt, u_x,u_y, std_acc, x_std_meas, y_std_meas):
+        """
+        :param dt: sampling time (time for 1 cycle)
+        :param u_x: acceleration in x-direction
+        :param u_y: acceleration in y-direction
+        :param std_acc: process noise magnitude
+        :param x_std_meas: standard deviation of the measurement in x-direction
+        :param y_std_meas: standard deviation of the measurement in y-direction
+        """
 
-  def select_roi(image):
-    image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
-    roi_points = []
-    def mouse_callback(event, x, y, flags, param):
-      if event == cv.EVENT_LBUTTONDOWN:
-        roi_points.append((x,y))
-        cv2.cirvle(image, (x,y), 5, (0,255,0), -1)
-        cv2.imshow("Select ROI", image)
-      cv2.imshow("Select ROI", image)
-      cv2.setMouseCallback("Select ROI", mouse_callback)
-      cv2.waitKey(0)
-      cv2.destroyAllWindows()
-      image = cv2.cvtColor(image, cv.COLOR_RGB2GRAY)
-      if len(roi_points) > 2:
-        roi_points = np.array(roi_points)
-        mask = np.zeros_like(image)
-        cv2.fillPoly(mask, [roi_points], (255, 255, 255))
-        return mask
-      else:
-        mask = np.ones_like(image)
-        return mask
-	
-  # Create the KNN background subtractor.
-  bg_subtractor = cv2.createBackgroundSubtractorKNN()
+        # Define sampling time
+        self.dt = dt
 
-  # Set the history length for the background subtractor.
-  history_length = 20
-  bg_subtractor.setHistory(history_length)
+        # Define the  control input variables
+        self.u = np.matrix([[u_x],[u_y]])
 
-  # Create kernel for erode and dilate operations.
-  erode_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-  dilate_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 7))
+        # Intial State
+        self.x = np.matrix([[0], [0], [0], [0]])
 
-  # Create an empty list to store the tracked blobs.
-  blobs = []
+        # Define the State Transition Matrix A
+        self.A = np.matrix([[1, 0, self.dt, 0],
+                            [0, 1, 0, self.dt],
+                            [0, 0, 1, 0],
+                            [0, 0, 0, 1]])
 
-  # Counter to keep track of the number of history frames populated.
-  num_history_frames_populated = 0
-	
-  FirstRunTest = True
+        # Define the Control Input Matrix B
+        self.B = np.matrix([[(self.dt**2)/2, 0],
+                            [0,(self.dt**2)/2],
+                            [self.dt,0],
+                            [0,self.dt]])
 
-  # Start processing each frame of the video.
-  while True:
-    # Read the current frame from the video.
-    img = camera.grab().astype(np.float32)
-    T, threshold = cv2.threshold(img, 3000, 5000, cv2.THRESH_BINARY)
-    img2 = 255*(img - img.min())/(img.max()-img.min())
-    imgu = img2.astype(np.uint8)
-    frame = imgu
-##    if FirstRunTest is True and imgu is not None:
- #     masku = select_roi(imgu)
- #     mask = masku.astype(np.float32)
- #     FirstRunTest = False
- #   if FirstRunTest is False:
- #     masked = cv2.bitwise_and(threshold, mask)
-  #  frame = masked.astype(np.uint8)
+        # Define Measurement Mapping Matrix
+        self.H = np.matrix([[1, 0, 0, 0],
+                            [0, 1, 0, 0]])
 
-    # Apply the KNN background subtractor to get the foreground mask.
-   # fg_mask = bg_subtractor.apply(frame)
+        #Initial Process Noise Covariance
+        self.Q = np.matrix([[(self.dt**4)/4, 0, (self.dt**3)/2, 0],
+                            [0, (self.dt**4)/4, 0, (self.dt**3)/2],
+                            [(self.dt**3)/2, 0, self.dt**2, 0],
+                            [0, (self.dt**3)/2, 0, self.dt**2]]) * std_acc**2
 
-    # Let the background subtractor build up a history before further processing.
-    if num_history_frames_populated < history_length:
-        num_history_frames_populated += 1
-        continue
+        #Initial Measurement Noise Covariance
+        self.R = np.matrix([[x_std_meas**2,0],
+                           [0, y_std_meas**2]])
 
-    # Create the thresholded image using the foreground mask.
-    #_, thresh = cv2.threshold(fg_mask, 127, 255, cv2.THRESH_BINARY)
+        #Initial Covariance Matrix
+        self.P = np.eye(self.A.shape[1])
 
-    # Perform erosion and dilation to improve the thresholded image.
-   # cv2.erode(thresh, erode_kernel, thresh, iterations=2)
-   # cv2.dilate(thresh, dilate_kernel, thresh, iterations=2)
+    def predict(self):
+        # Refer to :Eq.(9) and Eq.(10)  in https://machinelearningspace.com/object-tracking-simple-implementation-of-kalman-filter-in-python/?preview_id=1364&preview_nonce=52f6f1262e&preview=true&_thumbnail_id=1795
 
-    # Find contours in the thresholded image.
-    contours, hier = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Update time state
+        #x_k =Ax_(k-1) + Bu_(k-1)     Eq.(9)
+        self.x = np.dot(self.A, self.x) + np.dot(self.B, self.u)
 
-    # Convert the frame to HSV color space for tracking.
-    hsv_frame_color = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
-    hsv_frame = cv2.cvtColor(hsv_frame_color, cv2.COLOR_BGR2HSV)
+        # Calculate error covariance
+        # P= A*P*A' + Q               Eq.(10)
+        self.P = np.dot(np.dot(self.A, self.P), self.A.T) + self.Q
+        return self.x[0:2]
 
-    # Draw red rectangles around large contours.
-    # If there are no blobs being tracked yet, create new trackers.
-    should_initialize_blobs = len(blobs) == 0
-    id = 0
-    for c in contours:
-        # Check if the contour area is larger than a threshold.
-        if cv2.contourArea(c) > 90:
-            # Get the bounding rectangle coordinates.
-            (x, y, w, h) = cv2.boundingRect(c)
-            
-            
-            # Draw a rectangle around the contour.
-            cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 1)
-            
-            # If no senators are being tracked yet, create a new tracker for each contour.
-            if should_initialize_blobs:
-                print(frame.shape)
-                blobs.append(Tracker(id, hsv_frame, (x, y, w, h)))
-        id += 1
+    def update(self, z):
 
-    # Update the tracking of each senator.
-    for blob in blobs:
-        print(blob)
-        blob.update(frame, hsv_frame)
+        # Refer to :Eq.(11), Eq.(12) and Eq.(13)  in https://machinelearningspace.com/object-tracking-simple-implementation-of-kalman-filter-in-python/?preview_id=1364&preview_nonce=52f6f1262e&preview=true&_thumbnail_id=1795
+        # S = H*P*H'+R
+        S = np.dot(self.H, np.dot(self.P, self.H.T)) + self.R
 
-    # Display the frame with senators being tracked.
-    cv2.imshow('Blobs Tracked', frame)
+        # Calculate the Kalman Gain
+        # K = P * H'* inv(H*P*H'+R)
+        K = np.dot(np.dot(self.P, self.H.T), np.linalg.inv(S))  #Eq.(11)
 
-    # Wait for the user to press a key (110ms delay).
-    k = cv2.waitKey(110)
+        self.x = np.round(self.x + np.dot(K, (z - np.dot(self.H, self.x))))   #Eq.(12)
 
-    # If the user presses the Escape key (key code 27), exit the loop.
-    if k == 27:
-        break
+        I = np.eye(self.H.shape[1])
+
+        # Update error covariance matrix
+        self.P = (I - (K * self.H)) * self.P   #Eq.(13)
+        return self.x[0:2]
