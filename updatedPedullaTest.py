@@ -35,6 +35,8 @@ with Lepton() as camera:
 		cy_old = []
 		blob_velo = []
 		blobthresh = 90
+		B = 255
+		R = 0
 		for contour in contours:
 			mask = np.zeros_like(frame)
 			contourSize = cv.contourArea(contour)
@@ -49,7 +51,7 @@ with Lepton() as camera:
 					cx_old = cx_all
 					cy_old = cy_all
 				else:
-					blob_velo = sqrt((cx_all-cx_old)^2+(cy_all-cy_old)^2)
+					blob_velo = np.sqrt((cx_all-cx_old)^2+(cy_all-cy_old)^2)
 					threshold = 7
 					result = blob_velo[blob_velo < threshold] 
 					if len(result)>=1:

@@ -30,37 +30,40 @@ with Lepton() as camera:
 			return mask #return the mask 
 			
 	def detect_objects(frame): #detecting objects function
-		bbox = [] #empty array of box coordinates 
+		bbox = [] #empty list of box coordinates 
 		contours, hier = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) #find contours in given frame 
 		for c in contours: #go through each contour
 			# Check if the contour area is larger than a threshold.
 			if cv2.contourArea(c) > 90: #if contour is big enough 
 				# Get the bounding rectangle coordinates.
 				[x, y, w, h] = cv2.boundingRect(c) #find bounding rectangular coords and save 
-				bbox.append([x,y,w,h]) #add coords to the box coordinate list (might need to change this)
+				bbox.append((x,y,w,h)) #add coords to the box coordinate list
+		if len(bbox) > 0: #if there are any blobs
+			bbox = np.array(bbox) #create an array out of the list
 		return bbox #return list of coordinates 
 
-	def draw_bbox(frame):
-		bbox = []
-		contours, hier = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-		for c in contours:
-			mask = np.zeros_like(frame)
-			contourSize = cv2.contourArea(c)
-			# Check if the contour area is larger than a threshold.
-			if cv2.contourArea(c) > 90:
-				cv2.fillPoly(mask,[c],1)
-				# draw rectangle coordinates.
-				cv2.boundingRect(c)
-		simpleblobcolor = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
-		return simpleblobcolor
+	# def draw_bbox(frame):
+		# bbox = []
+		# contours, hier = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+		# for c in contours:
+			# mask = np.zeros_like(frame)
+			# contourSize = cv2.contourArea(c)
+			# # Check if the contour area is larger than a threshold.
+			# if cv2.contourArea(c) > 90:
+				# cv2.fillPoly(mask,[c],1)
+				# # draw rectangle coordinates.
+				# cv2.boundingRect(c)
+		# simpleblobcolor = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
+		# return simpleblobcolor
 
 
 	blobs = []
 	FirstRunTest = True
 	
 	while(True):
+		
 		img = camera.grab().astype(np.float32)
-		T, threshold = cv2.threshold(img, 3000, 5000, cv2.THRESH_BINARY)
+		T, threshold = cv2.threshold(img, 30000, 50000, cv2.THRESH_BINARY)
 		img2 = 255*(img - img.min())/(img.max()-img.min())
 		imgu = img2.astype(np.uint8)
 		
@@ -70,12 +73,14 @@ with Lepton() as camera:
 			FirstRunTest = False
 		if FirstRunTest is False:
 			masked = cv2.bitwise_and(threshold, mask)
+		cv2.imshow('mask', masked)
 		masked2 = masked.astype(np.uint8)
 		detections = detect_objects(masked2)
-		simpleblob = draw_bbox(masked2)
+		print(detections)
+		#simpleblob = draw_bbox(masked2)
 		
 		
-		cv2.imshow('Blobs Tracked', simpleblob)
+		#cv2.imshow('Blobs Tracked', masked2)
 
     # Wait for the user to press a key (110ms delay).
 		k = cv2.waitKey(110)
