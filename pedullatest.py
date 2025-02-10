@@ -47,21 +47,21 @@ with Lepton() as camera:
 			    cY = int(M["m01"] / M["m00"])
 			    cy_all.append(cY)
 			    if len(cx_all)!=len(cx_old):
-				 cx_old = cx_all
-				 cy_old = cy_all
-			    else:
+				    cx_old = cx_all
+				    cy_old = cy_all
+                else:
 					blob_velo = sqrt((cx_all-cx_old)^2+(cy_all-cy_old)^2)
 					threshold = 7
 					result = blob_velo[blob_velo < threshold] 
 					if len(result)>=1:
 						B=0
 					  	R=255
-					  else:
-						  R=0
-						  B=255
+					else:
+						R=0
+						B=255
 					cx_old = cx_all
 					cy_old = cy_all
-				
+					
 		
 			    
 		simpleblobcolor = cv.cvtColor(frame, cv.COLOR_GRAY2RGB)
