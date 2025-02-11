@@ -40,6 +40,8 @@ with Lepton() as camera:
 				circles.append((x,y))) #add coords to the circle coordinate list
 		if len(circles) > 0: #if there are any blobs
 			circles = np.array(circles) #create an array out of the list
+		else:
+			circles = [] #return zero if no blobs of right size
 		return circles #return list of coordinates 
 
 
