@@ -33,18 +33,26 @@ with Lepton() as camera:
 		circles = [] #empty list of box coordinates 
 		contours, hier = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) #find contours in given frame 
 		for c in contours: #go through each contour
+			mask = np.zeros_like(frame)
 			# Check if the contour area is larger than a threshold.
 			if cv2.contourArea(c) > 90: #if contour is big enough 
 				# Get the bounding circle coordinates.
-				(x,y), radius = cv2.minEnclosingCircle(c) #find bounding circle coords and save 
-				circles.append((x,y))) #add coords to the circle coordinate list
-		if len(circles) > 0: #if there are any blobs
-			circles = np.array(circles) #create an array out of the list
-		else:
-			circles = [] #return zero if no blobs of right size
+				cv2.fillPoly(mask, [c], 1)
+				M = cv2.moments(mask)
+				x = int(M["m10"] / M["m00"])
+				y = int(M["m01"] / M["m00"]) 
+				circles.append((x, y)) #add coords to the circle coordinate list
+		circles = np.array(circles)
 		return circles #return list of coordinates 
-
-
+		
+	def circleBlobs(c, frame):
+		if len(c) > 0:
+			for i in range(len(c)):
+			    cv2.circle(frame, (c[i][0], c[i][1]), 10, (255, 0, 0), 2)
+			simpleblob = frame
+		else:
+			simpleblob = frame
+		return simpleblob
 
 	FirstRunTest = True
 	KF = KalmanFilter(0.1, 1, 1, 1, 0.1, 0.1)
@@ -52,7 +60,7 @@ with Lepton() as camera:
 	while(True):
 		
 		img = camera.grab().astype(np.float32)
-		T, threshold = cv2.threshold(img, 30000, 50000, cv2.THRESH_BINARY)
+		T, threshold = cv2.threshold(img, 30050, 50000, cv2.THRESH_BINARY)
 		img2 = 255*(img - img.min())/(img.max()-img.min())
 		imgu = img2.astype(np.uint8)
 		
@@ -62,23 +70,23 @@ with Lepton() as camera:
 			FirstRunTest = False
 		if FirstRunTest is False:
 			masked = cv2.bitwise_and(threshold, mask)
-		cv2.imshow('mask', masked)
+		#cv2.imshow('mask', masked)
 		masked2 = masked.astype(np.uint8)
-		detections = detect_objects(masked2)
-		if len(detections) > 0:
-			cv2.circle(masked2, (int(circles[0][0]), int(circles[0][0])), 10, (0,191,255), 2) #draw circle around blob
-			(x, y) = KF.predict() #predict where it is going
-			cv2.rectangle(masked2, (int(x-15), int(y-15), (int(x + 15)), int(y+15)), (255, 0, 0, 2)) # draw rectangle at predicted pos
-			(x1, y1) = KF.update(circles[0]) #update
-			cv2.rectangle(masked2, (int(x1 - 15), int(y1 - 15)), (int(x1 + 15), int(y1 + 15)), (0, 0, 255), 2) #draw rectangle at estimated pos
-			cv2.putText(frame, "Estimated Position", (int(x1 + 15), int(y1 + 10)), 0, 0.5, (0, 0, 255), 2)
-			cv2.putText(frame, "Predicted Position", (int(x + 15), int(y)), 0, 0.5, (255, 0, 0), 2)
-			cv2.putText(frame, "Measured Position", (int(centers[0][0] + 15), int(centers[0][1] - 15)), 0, 0.5, (0,191,255), 2)
+		circles = detect_objects(masked2)
+		masked3 = cv2.cvtColor(masked2, cv2.COLOR_GRAY2RGB)
+		masked3 = circleBlobs(circles, masked3)
+		if len(circles) > 0:
+			for i in range(len(circles)):
+				(x, y) = KF.predict() #predict where it is going
+				cv2.rectangle(masked3, (int(x-15), int(y-15), (int(x + 15)), int(y+15)), (255, 0, 0, 2)) # draw rectangle at predicted pos
+				(x1, y1) = KF.update(circles[i]) #update NEED TO FIX WHAT THIS IS OUTPUTTING I THINK THE FUNCTION HAS AN ERROR SOMEWHERE BC CIRCLES[I] LOOKS RIGHT 
+				cv2.rectangle(masked3, (int(x1 - 15), int(y1 - 15)), (int(x1 + 15), int(y1 + 15)), (0, 0, 255), 2) #draw rectangle at estimated pos
+				cv2.putText(masked3, "Estimated Position", (int(x1 + 15), int(y1 + 10)), 0, 0.5, (0, 0, 255), 2)
+				cv2.putText(masked3, "Predicted Position", (int(x + 15), int(y)), 0, 0.5, (255, 0, 0), 2)
 			
-
-
-		
-		#cv2.imshow('Blobs Tracked', masked2)
+		blobcopy = cv2.resize(masked3, (1000,600))
+		blobcopy2 = cv2.flip(blobcopy, 0)
+		cv2.imshow('Blobs Tracked', blobcopy2)
 
     # Wait for the user to press a key (110ms delay).
 		k = cv2.waitKey(110)
