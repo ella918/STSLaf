@@ -99,7 +99,7 @@ with Lepton() as camera:
 						y = int(tracker.tracks[j].trace[k][0,1])
 						cv2.circle(frame,(x,y), 3, track_colors[j],-1)
 					cv2.circle(frame,(x,y), 6, track_colors[j],-1)
-				cv2.circle(frame,(int(centers[i,0]),int(centers[i,1])), 6, (0,0,0),-1)
+				#blobed = circleBlobs(centers, frame)
 			cv2.imshow('image',frame)
 			time.sleep(0.1)
 			if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -107,6 +107,11 @@ with Lepton() as camera:
 				break
 
     
+    # Wait for the user to press a key (110ms delay).
+		k = cv2.waitKey(110)
 
+    # If the user presses the Escape key (key code 27), exit the loop.
+		if k == 27:
+			break
 
   

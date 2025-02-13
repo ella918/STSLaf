@@ -38,6 +38,7 @@ with Lepton() as camera:
 		blobthresh = 90
 		B = 255
 		R = 0
+		First_RUN = True
 		for contour in contours:
 			mask = np.zeros_like(frame)
 			contourSize = cv.contourArea(contour)
@@ -50,10 +51,12 @@ with Lepton() as camera:
 				cy_all.append(cY)
 				print(len(cx_all))
 				print(len(cx_old))
-				if len(cx_all)!=len(cx_old):
+				if First_RUN:  #len(cx_all)!=len(cx_old):
+					print('made it')
 					cx_old = cx_all
 					cy_old = cy_all
 					blob_velo = [0]*len(cx_all)
+					First_RUN = False;
 				else:
 					for i in range(len(cx_all)-1):
 						blob_velo[i] = np.sqrt(np.square(cx_all[i]-cx_old[i])+np.square(cy_all[i]-cy_old[i]))
