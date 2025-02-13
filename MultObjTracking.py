@@ -74,11 +74,11 @@ with Lepton() as camera:
 			FirstRunTest = False
 		if FirstRunTest is False:
 			masked = cv2.bitwise_and(threshold, mask)
-		#cv2.imshow('mask', masked)
+
 		masked2 = masked.astype(np.uint8)
 		centers = detect_objects(masked2)
 		masked3 = cv2.cvtColor(masked2, cv2.COLOR_GRAY2RGB)
-		#masked3 = circleBlobs(centers, masked3)
+		masked3 = circleBlobs(centers, masked3)
 		tracker = Tracker(150, 30, 5)
 		track_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (127, 127, 255), (255, 0, 255), (255, 127, 255), (127, 0, 255), (127, 0, 127),(127, 10, 255), (0,255, 127)]
 		
@@ -101,8 +101,8 @@ with Lepton() as camera:
 					cv2.circle(frame,(x,y), 6, track_colors[j],-1)
 				for n in range(i):
 					cv2.circle(frame, (centers[n][0], centers[n][1]), 6, (0,0,0),-1)
-			#blobed = circleBlobs(centers, frame)
-			cv2.imshow('image',frame)
+		cv2.imshow('image',frame)
+		cv2.imshow("blobed", masked3)
 
     
     # Wait for the user to press a key (110ms delay).
