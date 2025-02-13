@@ -28,17 +28,12 @@ with Lepton() as camera:
 			return mask	
 	def subtract_lists(list1, list2):
 		return [x-y for x, y in zip(list1, list2)]
+	
 	def SimpleBlob(frame):
 		contours, hierarchy = cv.findContours(frame, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 		cx_all = []
-		cx_old = []
 		cy_all = []
-		cy_old = []
-		blob_velo = []
 		blobthresh = 90
-		B = 255
-		R = 0
-		First_RUN = True
 		for contour in contours:
 			mask = np.zeros_like(frame)
 			contourSize = cv.contourArea(contour)
@@ -49,14 +44,18 @@ with Lepton() as camera:
 				cx_all.append(cX)
 				cY = int(M["m01"] / M["m00"])
 				cy_all.append(cY)
-				print(len(cx_all))
-				print(len(cx_old))
-				if First_RUN:  #len(cx_all)!=len(cx_old):
+				#print(len(cx_all))
+				#print(len(cx_old))
+				if global FirstRUN is True:  #len(cx_all)!=len(cx_old):
 					print('made it')
+					global cy_old
+					global cx_old
+					global blob_velo
 					cx_old = cx_all
 					cy_old = cy_all
 					blob_velo = [0]*len(cx_all)
-					First_RUN = False;
+					global FirstRUN
+					FirstRUN = False
 				else:
 					for i in range(len(cx_all)-1):
 						blob_velo[i] = np.sqrt(np.square(cx_all[i]-cx_old[i])+np.square(cy_all[i]-cy_old[i]))
@@ -82,7 +81,12 @@ with Lepton() as camera:
 		else:
 			simpleblob = frame
 		return simpleblob
-	
+	B = 255
+	R = 0
+	cx_old = []
+	cy_old = []
+	blob_velo = []
+	FirstRUN = True
 	FirstRunTest = True
 	while True:
 		
