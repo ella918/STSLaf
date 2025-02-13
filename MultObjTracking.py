@@ -62,7 +62,7 @@ with Lepton() as camera:
 	FirstRunTest = True
 	
 	while(True):
-		
+		frame = createimage(512,512)
 		img = camera.grab().astype(np.float32)
 		T, threshold = cv2.threshold(img, 30050, 50000, cv2.THRESH_BINARY)
 		img2 = 255*(img - img.min())/(img.max()-img.min())
@@ -82,7 +82,7 @@ with Lepton() as camera:
 		tracker = Tracker(150, 30, 5)
 		track_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (127, 127, 255), (255, 0, 255), (255, 127, 255), (127, 0, 255), (127, 0, 127),(127, 10, 255), (0,255, 127)]
 		
-		frame = createimage(512,512)
+		
 		i = len(centers)
 		if i > 0:
 			tracker.update(centers)
@@ -99,12 +99,10 @@ with Lepton() as camera:
 						y = int(tracker.tracks[j].trace[k][0,1])
 						cv2.circle(frame,(x,y), 3, track_colors[j],-1)
 					cv2.circle(frame,(x,y), 6, track_colors[j],-1)
-				#blobed = circleBlobs(centers, frame)
+				for n in range(i):
+					cv2.circle(frame, (centers[n][0], centers[n][1]), 6, (0,0,0),-1)
+			#blobed = circleBlobs(centers, frame)
 			cv2.imshow('image',frame)
-			time.sleep(0.1)
-			if cv2.waitKey(1) & 0xFF == ord('q'):
-				cv2.destroyAllWindows()
-				break
 
     
     # Wait for the user to press a key (110ms delay).

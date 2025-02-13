@@ -2,8 +2,7 @@ import numpy as np
 class KalmanFilter(object):
 	"""docstring for KalmanFilter"""
 
-	def __init__(self, dt=1,stateVariance=1,measurementVariance=1, 
-														method="Velocity" ):
+	def __init__(self, dt=1,stateVariance=1,measurementVariance=1,method="Velocity" ):
 		super(KalmanFilter, self).__init__()
 		self.method = method
 		self.stateVariance = stateVariance
@@ -17,21 +16,15 @@ class KalmanFilter(object):
 			self.U = 1
 		else: 
 			self.U = 0
-		self.A = np.matrix( [[1 ,self.dt, 0, 0], [0, 1, 0, 0], 
-										[0, 0, 1, self.dt],  [0, 0, 0, 1]] )
+		self.A = np.matrix( [[1 ,self.dt, 0, 0], [0, 1, 0, 0], [0, 0, 1, self.dt],  [0, 0, 0, 1]] )
 
-		self.B = np.matrix( [[self.dt**2/2], [self.dt], [self.dt**2/2], 
-																[self.dt]] )
+		self.B = np.matrix( [[self.dt**2/2], [self.dt], [self.dt**2/2], [self.dt]] )
 		
 		self.H = np.matrix( [[1,0,0,0], [0,0,1,0]] ) 
 		self.P = np.matrix(self.stateVariance*np.identity(self.A.shape[0]))
-		self.R = np.matrix(self.measurementVariance*np.identity(
-															self.H.shape[0]))
+		self.R = np.matrix(self.measurementVariance*np.identity(self.H.shape[0]))
 		
-		self.Q = np.matrix( [[self.dt**4/4 ,self.dt**3/2, 0, 0], 
-							[self.dt**3/2, self.dt**2, 0, 0], 
-							[0, 0, self.dt**4/4 ,self.dt**3/2],
-							[0, 0, self.dt**3/2,self.dt**2]])
+		self.Q = np.matrix( [[self.dt**4/4 ,self.dt**3/2, 0, 0], [self.dt**3/2, self.dt**2, 0, 0], [0, 0, self.dt**4/4 ,self.dt**3/2],[0, 0, self.dt**3/2,self.dt**2]])
 		
 		self.erroCov = self.P
 		self.state = np.matrix([[0],[1],[0],[1]])
@@ -46,11 +39,8 @@ class KalmanFilter(object):
 
 	"""Correct function which correct the states based on measurements"""
 	def correct(self, currentMeasurement):
-		self.kalmanGain = self.predictedErrorCov*self.H.T*np.linalg.pinv(
-								self.H*self.predictedErrorCov*self.H.T+self.R)
-		self.state = self.predictedState + self.kalmanGain*(currentMeasurement
-											   - (self.H*self.predictedState))
+		self.kalmanGain = self.predictedErrorCov*self.H.T*np.linalg.pinv(self.H*self.predictedErrorCov*self.H.T+self.R)
+		self.state = self.predictedState + self.kalmanGain*(currentMeasurement - (self.H*self.predictedState))
 		
 
-		self.erroCov = (np.identity(self.P.shape[0]) - 
-								self.kalmanGain*self.H)*self.predictedErrorCov
+		self.erroCov = (np.identity(self.P.shape[0]) - self.kalmanGain*self.H)*self.predictedErrorCov
