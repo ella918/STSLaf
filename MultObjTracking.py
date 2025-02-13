@@ -83,8 +83,8 @@ with Lepton() as camera:
 		track_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (127, 127, 255), (255, 0, 255), (255, 127, 255), (127, 0, 255), (127, 0, 127),(127, 10, 255), (0,255, 127)]
 		
 		frame = createimage(512,512)
-			
-		if (len(centers) > 0):
+		i = len(centers)
+		if i > 0:
 			tracker.update(centers)
 			for j in range(len(tracker.tracks)):
 				if (len(tracker.tracks[j].trace) > 1):
@@ -101,8 +101,6 @@ with Lepton() as camera:
 					cv2.circle(frame,(x,y), 6, track_colors[j],-1)
 				cv2.circle(frame,(int(centers[i,0]),int(centers[i,1])), 6, (0,0,0),-1)
 			cv2.imshow('image',frame)
-			# cv2.imwrite("image"+str(i)+".jpg", frame)
-			# images.append(imageio.imread("image"+str(i)+".jpg"))
 			time.sleep(0.1)
 			if cv2.waitKey(1) & 0xFF == ord('q'):
 				cv2.destroyAllWindows()
