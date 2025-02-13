@@ -51,16 +51,12 @@ with Lepton() as camera:
 				global B
 				global R
 				if len(cx_all)!=len(cx_old):
-					print('made it')
 					global blob_velo
 					cx_old = cx_all
 					cy_old = cy_all
 					blob_velo = [0]*len(cx_all)
-					global FirstRUN
-					FirstRUN = False
 				else:
-					print('second spot')
-					for i in range(len(cx_all)-1):
+					for i in range(len(cx_all)):
 						blob_velo[i] = np.sqrt(np.square(cx_all[i]-cx_old[i])+np.square(cy_all[i]-cy_old[i]))
 					threshold = 6
 					blob_velo = np.array(blob_velo, dtype=np.float32)
