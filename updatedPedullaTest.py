@@ -48,14 +48,19 @@ with Lepton() as camera:
 				cx_all.append(cX)
 				cY = int(M["m01"] / M["m00"])
 				cy_all.append(cY)
+				print(len(cx_all))
+				print(len(cx_old))
 				if len(cx_all)!=len(cx_old):
 					cx_old = cx_all
 					cy_old = cy_all
+					blob_velo = [0]*len(cx_all)
 				else:
-					blob_velo = np.sqrt(np.square(subtract_lists(cx_all, cx_old))+np.square(subtract_lists(cy_all, cy_old)))
-					threshold = 7
+					for i in range(len(cx_all)-1):
+						blob_velo[i] = np.sqrt(np.square(cx_all[i]-cx_old[i])+np.square(cy_all[i]-cy_old[i]))
+					threshold = 6
+					blob_velo = np.array(blob_velo, dtype=np.float32)
 					result = blob_velo[blob_velo < threshold] 
-					if len(result)>=1:
+					if len(result)>0:
 						B=0
 						R=255
 					else:

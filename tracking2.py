@@ -79,7 +79,8 @@ with Lepton() as camera:
 			for i in range(len(circles)):
 				(x, y) = KF.predict() #predict where it is going
 				cv2.rectangle(masked3, (int(x-15), int(y-15), (int(x + 15)), int(y+15)), (255, 0, 0, 2)) # draw rectangle at predicted pos
-				(x1, y1) = KF.update(circles[i]) #update NEED TO FIX WHAT THIS IS OUTPUTTING I THINK THE FUNCTION HAS AN ERROR SOMEWHERE BC CIRCLES[I] LOOKS RIGHT 
+				(x1, y1) = KF.update(circles[i]) #update NEED TO FIX WHAT THIS IS OUTPUTTING I THINK THE FUNCTION HAS AN ERROR SOMEWHERE BC CIRCLES[i] LOOKS RIGHT
+				print((x1, y1)) 
 				cv2.rectangle(masked3, (int(x1 - 15), int(y1 - 15)), (int(x1 + 15), int(y1 + 15)), (0, 0, 255), 2) #draw rectangle at estimated pos
 				cv2.putText(masked3, "Estimated Position", (int(x1 + 15), int(y1 + 10)), 0, 0.5, (0, 0, 255), 2)
 				cv2.putText(masked3, "Predicted Position", (int(x + 15), int(y)), 0, 0.5, (255, 0, 0), 2)

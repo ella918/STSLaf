@@ -29,6 +29,10 @@ with Lepton() as camera:
 		else:
 			mask = np.ones_like(image) #create mask of ones the same as the image
 			return mask #return the mask 
+	def createimage(w,h):
+		size = (w,h,1)
+		img = np.ones((w,h,3),np.uint8)*255
+		return img
 			
 	def detect_objects(frame): #detecting objects function
 		circles = [] #empty list of box coordinates 
@@ -43,7 +47,7 @@ with Lepton() as camera:
 				x = int(M["m10"] / M["m00"])
 				y = int(M["m01"] / M["m00"]) 
 				circles.append((x, y)) #add coords to the circle coordinate list
-		circles = np.ndarray(circles)
+		circles = np.array(circles)
 		return circles #return list of coordinates 
 		
 	def circleBlobs(c, frame):
@@ -56,7 +60,6 @@ with Lepton() as camera:
 		return simpleblob
 
 	FirstRunTest = True
-	KF = KalmanFilter(0.1, 1, 1, 1, 0.1, 0.1)
 	
 	while(True):
 		
@@ -73,22 +76,17 @@ with Lepton() as camera:
 			masked = cv2.bitwise_and(threshold, mask)
 		#cv2.imshow('mask', masked)
 		masked2 = masked.astype(np.uint8)
-		circles = detect_objects(masked2)
+		centers = detect_objects(masked2)
 		masked3 = cv2.cvtColor(masked2, cv2.COLOR_GRAY2RGB)
-		masked3 = circleBlobs(circles, masked3)
-
-    tracker = Tracker(150, 30, 5)
-    track_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0),
-					(127, 127, 255), (255, 0, 255), (255, 127, 255),
-					(127, 0, 255), (127, 0, 127),(127, 10, 255), (0,255, 127)]
-  
-    for i in range(circles):
-		  centers = cirlces
-		  frame = createimage(512,512)
-  
+		#masked3 = circleBlobs(centers, masked3)
+		tracker = Tracker(150, 30, 5)
+		track_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (127, 127, 255), (255, 0, 255), (255, 127, 255), (127, 0, 255), (127, 0, 127),(127, 10, 255), (0,255, 127)]
+		
+		frame = createimage(512,512)
+			
 		if (len(centers) > 0):
-		  tracker.update(centers)
-		  for j in range(len(tracker.tracks)):
+			tracker.update(centers)
+			for j in range(len(tracker.tracks)):
 				if (len(tracker.tracks[j].trace) > 1):
 					x = int(tracker.tracks[j].trace[-1][0,0])
 					y = int(tracker.tracks[j].trace[-1][0,1])
@@ -101,7 +99,7 @@ with Lepton() as camera:
 						y = int(tracker.tracks[j].trace[k][0,1])
 						cv2.circle(frame,(x,y), 3, track_colors[j],-1)
 					cv2.circle(frame,(x,y), 6, track_colors[j],-1)
-				cv2.circle(frame,(int(circles[j,i,0]),int(centers[j,i,1])), 6, (0,0,0),-1)
+				cv2.circle(frame,(int(centers[i,0]),int(centers[i,1])), 6, (0,0,0),-1)
 			cv2.imshow('image',frame)
 			# cv2.imwrite("image"+str(i)+".jpg", frame)
 			# images.append(imageio.imread("image"+str(i)+".jpg"))
