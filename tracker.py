@@ -37,7 +37,6 @@ class Tracker(object):
 				track = Tracks(detections[i], self.trackId)
 				self.trackId +=1
 				self.tracks.append(track)
-
 		N = len(self.tracks)
 		M = len(detections)
 		cost = []

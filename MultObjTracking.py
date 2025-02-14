@@ -36,6 +36,7 @@ with Lepton() as camera:
 			
 	def detect_objects(frame): #detecting objects function
 		circles = [] #empty list of box coordinates 
+		
 		contours, hier = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) #find contours in given frame 
 		for c in contours: #go through each contour
 			mask = np.zeros_like(frame)
@@ -46,7 +47,7 @@ with Lepton() as camera:
 				M = cv2.moments(mask)
 				x = int(M["m10"] / M["m00"])
 				y = int(M["m01"] / M["m00"]) 
-				circles.append((x, y)) #add coords to the circle coordinate list
+				circles.append([x, y]) #add coords to the circle coordinate list
 		circles = np.array(circles)
 		return circles #return list of coordinates 
 		
@@ -85,9 +86,14 @@ with Lepton() as camera:
 		
 		i = len(centers)
 		if i > 0:
+		#	for n in range(i):
+				#print(centers[n])
 			tracker.update(centers)
-			for j in range(len(tracker.tracks)):
-				if (len(tracker.tracks[j].trace) > 1):
+			
+			for j in range(len(tracker.tracks)): #len(tracker.tracks) is the number of blobs
+				print(tracker.tracks[j].trace) #example: deque([array([[68.92307692, 52.76923077]])], maxlen=20)
+				if (len(tracker.tracks[j].trace) > 1): #this is staying at one so it is not going into the if statement 
+					print('in if statement')
 					x = int(tracker.tracks[j].trace[-1][0,0])
 					y = int(tracker.tracks[j].trace[-1][0,1])
 					tl = (x-10,y-10)
@@ -95,6 +101,7 @@ with Lepton() as camera:
 					cv2.rectangle(frame,tl,br,track_colors[j],1)
 					cv2.putText(frame,str(tracker.tracks[j].trackId), (x-10,y-20),0, 0.5, track_colors[j],2)
 					for k in range(len(tracker.tracks[j].trace)):
+						print('in for in if')
 						x = int(tracker.tracks[j].trace[k][0,0])
 						y = int(tracker.tracks[j].trace[k][0,1])
 						cv2.circle(frame,(x,y), 3, track_colors[j],-1)
