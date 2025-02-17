@@ -61,7 +61,7 @@ with Lepton() as camera:
 		return simpleblob
 
 	FirstRunTest = True
-	
+	tracker = Tracker(10, 5, 5)
 	while(True):
 		frame = createimage(512,512)
 		img = camera.grab().astype(np.float32)
@@ -80,7 +80,7 @@ with Lepton() as camera:
 		centers = detect_objects(masked2)
 		masked3 = cv2.cvtColor(masked2, cv2.COLOR_GRAY2RGB)
 		masked3 = circleBlobs(centers, masked3)
-		tracker = Tracker(150, 30, 5)
+		
 		track_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (127, 127, 255), (255, 0, 255), (255, 127, 255), (127, 0, 255), (127, 0, 127),(127, 10, 255), (0,255, 127)]
 		
 		
@@ -91,9 +91,8 @@ with Lepton() as camera:
 			tracker.update(centers)
 			
 			for j in range(len(tracker.tracks)): #len(tracker.tracks) is the number of blobs
-				print(tracker.tracks[j].trace) #example: deque([array([[68.92307692, 52.76923077]])], maxlen=20)
+				#print(tracker.tracks[j].trace) #example: deque([array([[68.92307692, 52.76923077]])], maxlen=20) 
 				if (len(tracker.tracks[j].trace) > 1): #this is staying at one so it is not going into the if statement 
-					print('in if statement')
 					x = int(tracker.tracks[j].trace[-1][0,0])
 					y = int(tracker.tracks[j].trace[-1][0,1])
 					tl = (x-10,y-10)
@@ -101,7 +100,6 @@ with Lepton() as camera:
 					cv2.rectangle(frame,tl,br,track_colors[j],1)
 					cv2.putText(frame,str(tracker.tracks[j].trackId), (x-10,y-20),0, 0.5, track_colors[j],2)
 					for k in range(len(tracker.tracks[j].trace)):
-						print('in for in if')
 						x = int(tracker.tracks[j].trace[k][0,0])
 						y = int(tracker.tracks[j].trace[k][0,1])
 						cv2.circle(frame,(x,y), 3, track_colors[j],-1)
