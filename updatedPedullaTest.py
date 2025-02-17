@@ -44,8 +44,6 @@ with Lepton() as camera:
 				cx_all.append(cX)
 				cY = int(M["m01"] / M["m00"])
 				cy_all.append(cY)
-				#print(len(cx_all))
-				#print(len(cx_old))
 				global cy_old
 				global cx_old
 				global B
@@ -54,8 +52,15 @@ with Lepton() as camera:
 					global blob_velo
 					cx_old = cx_all
 					cy_old = cy_all
-					blob_velo = [0]*len(cx_all)
+					
 				else:
+					blob_velo = np.zeros_like(cx_all)
+					print(len(cx_old))
+					print(len(cx_all))
+					print(len(cy_old))
+					print(len(cy_all))
+					print(len(blob_velo))
+					print('done')
 					for i in range(len(cx_all)):
 						blob_velo[i] = np.sqrt(np.square(cx_all[i]-cx_old[i])+np.square(cy_all[i]-cy_old[i]))
 					threshold = 6
