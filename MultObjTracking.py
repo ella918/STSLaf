@@ -7,7 +7,7 @@ from flirpy.camera.lepton import Lepton
 
 with Lepton() as camera:
 	camera.setup_video() #use Lepton camera
-	def select_roi(image): #roi function NEED TO ADD THAT IF ENTER IS PRESSED YOU DON'T HAVE TO PICK ROI
+	def select_roi(image): #roi function 
 		image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB) #change image to color so that the dots show up 
 		roi_points = [] #empty array of points
 		def mouse_callback(event, x, y, flags, param): #defining mouse function
@@ -83,7 +83,8 @@ with Lepton() as camera:
 		masked3 = circleBlobs(centers, masked3)
 		
 		track_colors = [(0, 255, 0), (0, 0, 255), (255, 255, 0), (127, 127, 255), (255, 0, 255), (255, 127, 255), (127, 0, 255), (127, 0, 127),(127, 10, 255), (0,255, 127)] #got rid of red so that can tell when crashes
-		
+
+		thresh = 5 #how much can the blob move for it to not think its a crash
 		
 		i = len(centers) # number of blobs
 		if i > 0: #if there are any blobs 
@@ -92,17 +93,19 @@ with Lepton() as camera:
 			for j in range(len(tracker.tracks)): #len(tracker.tracks) is the number of blobs
 				#print(tracker.tracks[j].trace) #example: deque([array([[68.92307692, 52.76923077]])], maxlen=20) 
 				if (len(tracker.tracks[j].trace) > 1): 
-					x = int(tracker.tracks[j].trace[-1][0,0]) #idea: rename these to x1 and y1
-					y = int(tracker.tracks[j].trace[-1][0,1])
-					tl = (x-10,y-10) #starting coordinates of rectangle 
-					br = (x+10,y+10) #ending coordinates of rectangle
+					x1 = int(tracker.tracks[j].trace[-1][0,0]) #idea: rename these to x1 and y1
+					y1 = int(tracker.tracks[j].trace[-1][0,1])
+					tl = (x1-10,y1-10) #starting coordinates of rectangle 
+					br = (x1+10,y1+10) #ending coordinates of rectangle
 					cv2.rectangle(frame,tl,br,track_colors[j],1) #draw rectangle 
-					cv2.putText(frame,str(tracker.tracks[j].trackId), (x-10,y-20),0, 0.5, track_colors[j],2) #label with which blob number
+					cv2.putText(frame,str(tracker.tracks[j].trackId), (x1-10,y1-20),0, 0.5, track_colors[j],2) #label with which blob number
 					for k in range(len(tracker.tracks[j].trace)):
-						x = int(tracker.tracks[j].trace[k][0,0]) #idea compare to the x and y above and if they are the same its a crash?
-						y = int(tracker.tracks[j].trace[k][0,1])
-						cv2.circle(frame,(x,y), 3, track_colors[j],-1)
-					cv2.circle(frame,(x,y), 6, track_colors[j],-1)
+						x2 = int(tracker.tracks[j].trace[k][0,0]) #idea compare to the x and y above and if they are the same its a crash?
+						y2 = int(tracker.tracks[j].trace[k][0,1])
+						cv2.circle(frame,(x2,y2), 3, track_colors[j],-1)
+						if abs(x1 - x2) < thresh && abs(y1 - y2) < thresh:
+							print('CRASH! BIKE', j)
+					cv2.circle(frame,(x2,y2), 6, track_colors[j],-1)
 				for n in range(i):
 					cv2.circle(frame, (centers[n][0], centers[n][1]), 6, (0,0,0),-1)
 		cv2.imshow('image',frame)
