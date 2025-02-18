@@ -7,7 +7,7 @@ from flirpy.camera.lepton import Lepton
 
 with Lepton() as camera:
 	camera.setup_video() #use Lepton camera
-	def select_roi(image): #roi function
+	def select_roi(image): #roi function NEED TO ADD THAT IF ENTER IS PRESSED YOU DON'T HAVE TO PICK ROI
 		image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB) #change image to color so that the dots show up 
 		roi_points = [] #empty array of points
 		def mouse_callback(event, x, y, flags, param): #defining mouse function
@@ -27,8 +27,9 @@ with Lepton() as camera:
 			cv2.fillPoly(mask, [roi_points], (255, 255, 255)) #fill mask outside of roi points
 			return mask #return the mask
 		else:
-			mask = np.ones_like(image) #create mask of ones the same as the image
+			mask = image #if enter is pressed and nothing has been pressed then the mask is the frame 
 			return mask #return the mask 
+			
 	def createimage(w,h):
 		size = (w,h,1)
 		img = np.ones((w,h,3),np.uint8)*255
