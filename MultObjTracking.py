@@ -81,7 +81,7 @@ with Lepton() as camera:
 		masked3 = cv2.cvtColor(masked2, cv2.COLOR_GRAY2RGB)
 		masked3 = circleBlobs(centers, masked3)
 		
-		track_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (127, 127, 255), (255, 0, 255), (255, 127, 255), (127, 0, 255), (127, 0, 127),(127, 10, 255), (0,255, 127)]
+		track_colors = [(0, 255, 0), (0, 0, 255), (255, 255, 0), (127, 127, 255), (255, 0, 255), (255, 127, 255), (127, 0, 255), (127, 0, 127),(127, 10, 255), (0,255, 127)] #got rid of red so that can tell when crashes
 		
 		
 		i = len(centers)
@@ -92,15 +92,15 @@ with Lepton() as camera:
 			
 			for j in range(len(tracker.tracks)): #len(tracker.tracks) is the number of blobs
 				#print(tracker.tracks[j].trace) #example: deque([array([[68.92307692, 52.76923077]])], maxlen=20) 
-				if (len(tracker.tracks[j].trace) > 1): #this is staying at one so it is not going into the if statement 
-					x = int(tracker.tracks[j].trace[-1][0,0])
+				if (len(tracker.tracks[j].trace) > 1): 
+					x = int(tracker.tracks[j].trace[-1][0,0]) #idea: rename these to x1 and y1
 					y = int(tracker.tracks[j].trace[-1][0,1])
 					tl = (x-10,y-10)
 					br = (x+10,y+10)
 					cv2.rectangle(frame,tl,br,track_colors[j],1)
 					cv2.putText(frame,str(tracker.tracks[j].trackId), (x-10,y-20),0, 0.5, track_colors[j],2)
 					for k in range(len(tracker.tracks[j].trace)):
-						x = int(tracker.tracks[j].trace[k][0,0])
+						x = int(tracker.tracks[j].trace[k][0,0]) #idea compare to the x and y above and if they are the same its a crash?
 						y = int(tracker.tracks[j].trace[k][0,1])
 						cv2.circle(frame,(x,y), 3, track_colors[j],-1)
 					cv2.circle(frame,(x,y), 6, track_colors[j],-1)
