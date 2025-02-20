@@ -7,7 +7,7 @@ from flirpy.camera.lepton import Lepton
 
 with Lepton() as camera:
 	camera.setup_video() #use Lepton camera
-	def select_roi(image): #roi function
+	def select_roi(image): #roi function 
 		image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB) #change image to color so that the dots show up 
 		roi_points = [] #empty array of points
 		def mouse_callback(event, x, y, flags, param): #defining mouse function
@@ -27,8 +27,9 @@ with Lepton() as camera:
 			cv2.fillPoly(mask, [roi_points], (255, 255, 255)) #fill mask outside of roi points
 			return mask #return the mask
 		else:
-			mask = np.ones_like(image) #create mask of ones the same as the image
+			mask = image #if enter is pressed and nothing has been pressed then the mask is the frame 
 			return mask #return the mask 
+			
 	def createimage(w,h):
 		size = (w,h,1)
 		img = np.ones((w,h,3),np.uint8)*255
@@ -51,59 +52,60 @@ with Lepton() as camera:
 		circles = np.array(circles)
 		return circles #return list of coordinates 
 		
-	def circleBlobs(c, frame):
-		if len(c) > 0:
-			for i in range(len(c)):
-			    cv2.circle(frame, (c[i][0], c[i][1]), 10, (255, 0, 0), 2)
+	def circleBlobs(c, frame): #draw circles at blob on image
+		if len(c) > 0: #if there are blob
+			for i in range(len(c)): #for each blob
+			    cv2.circle(frame, (c[i][0], c[i][1]), 10, (255, 0, 0), 2) #draw circle at center of blob
 			simpleblob = frame
 		else:
 			simpleblob = frame
-		return simpleblob
+		return simpleblob 
 
 	FirstRunTest = True
-	tracker = Tracker(10, 5, 5)
+	tracker = Tracker(10, 5, 5) #distance thresh, max frame skipped, max trace length
 	while(True):
-		frame = createimage(512,512)
-		img = camera.grab().astype(np.float32)
-		T, threshold = cv2.threshold(img, 30050, 50000, cv2.THRESH_BINARY)
-		img2 = 255*(img - img.min())/(img.max()-img.min())
+		frame = createimage(512,512) #blank image to put labeled blobs 
+		img = camera.grab().astype(np.float32) #get image from FLIR
+		T, threshold = cv2.threshold(img, 30050, 50000, cv2.THRESH_BINARY) #threshold the temp 
+		img2 = 255*(img - img.min())/(img.max()-img.min()) 
 		imgu = img2.astype(np.uint8)
 		
-		if FirstRunTest is True and imgu is not None:
-			masku = select_roi(imgu)
+		if FirstRunTest is True and imgu is not None: #if there is an image and its the first time through the loop
+			masku = select_roi(imgu) 
 			mask = masku.astype(np.float32)
 			FirstRunTest = False
 		if FirstRunTest is False:
-			masked = cv2.bitwise_and(threshold, mask)
+			masked = cv2.bitwise_and(threshold, mask) #merge threshold and mask once created by select_roi
 
 		masked2 = masked.astype(np.uint8)
 		centers = detect_objects(masked2)
 		masked3 = cv2.cvtColor(masked2, cv2.COLOR_GRAY2RGB)
 		masked3 = circleBlobs(centers, masked3)
 		
-		track_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (127, 127, 255), (255, 0, 255), (255, 127, 255), (127, 0, 255), (127, 0, 127),(127, 10, 255), (0,255, 127)]
+		track_colors = [(0, 255, 0), (0, 0, 255), (255, 255, 0), (127, 127, 255), (255, 0, 255), (255, 127, 255), (127, 0, 255), (127, 0, 127),(127, 10, 255), (0,255, 127)] #got rid of red so that can tell when crashes
+
+		thresh = 5 #how much can the blob move for it to not think its a crash
 		
-		
-		i = len(centers)
-		if i > 0:
-		#	for n in range(i):
-				#print(centers[n])
-			tracker.update(centers)
+		i = len(centers) # number of blobs
+		if i > 0: #if there are any blobs 
+			tracker.update(centers) #update the tracker with the blob locations 
 			
 			for j in range(len(tracker.tracks)): #len(tracker.tracks) is the number of blobs
 				#print(tracker.tracks[j].trace) #example: deque([array([[68.92307692, 52.76923077]])], maxlen=20) 
-				if (len(tracker.tracks[j].trace) > 1): #this is staying at one so it is not going into the if statement 
-					x = int(tracker.tracks[j].trace[-1][0,0])
-					y = int(tracker.tracks[j].trace[-1][0,1])
-					tl = (x-10,y-10)
-					br = (x+10,y+10)
-					cv2.rectangle(frame,tl,br,track_colors[j],1)
-					cv2.putText(frame,str(tracker.tracks[j].trackId), (x-10,y-20),0, 0.5, track_colors[j],2)
+				if (len(tracker.tracks[j].trace) > 1): 
+					x1 = int(tracker.tracks[j].trace[-1][0,0]) #idea: rename these to x1 and y1
+					y1 = int(tracker.tracks[j].trace[-1][0,1])
+					tl = (x1-10,y1-10) #starting coordinates of rectangle 
+					br = (x1+10,y1+10) #ending coordinates of rectangle
+					cv2.rectangle(frame,tl,br,track_colors[j],1) #draw rectangle 
+					cv2.putText(frame,str(tracker.tracks[j].trackId), (x1-10,y1-20),0, 0.5, track_colors[j],2) #label with which blob number
 					for k in range(len(tracker.tracks[j].trace)):
-						x = int(tracker.tracks[j].trace[k][0,0])
-						y = int(tracker.tracks[j].trace[k][0,1])
-						cv2.circle(frame,(x,y), 3, track_colors[j],-1)
-					cv2.circle(frame,(x,y), 6, track_colors[j],-1)
+						x2 = int(tracker.tracks[j].trace[k][0,0]) #idea compare to the x and y above and if they are the same its a crash?
+						y2 = int(tracker.tracks[j].trace[k][0,1])
+						cv2.circle(frame,(x2,y2), 3, track_colors[j],-1)
+						if abs(x1 - x2) < thresh && abs(y1 - y2) < thresh:
+							print('CRASH! BIKE', j)
+					cv2.circle(frame,(x2,y2), 6, track_colors[j],-1)
 				for n in range(i):
 					cv2.circle(frame, (centers[n][0], centers[n][1]), 6, (0,0,0),-1)
 		cv2.imshow('image',frame)
