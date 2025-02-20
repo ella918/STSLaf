@@ -33,7 +33,7 @@ with Lepton() as camera:
 		contours, hierarchy = cv.findContours(frame, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
 		cx_all = []
 		cy_all = []
-		blobthresh = 90
+		blobthresh = 80
 		for contour in contours:
 			mask = np.zeros_like(frame)
 			contourSize = cv.contourArea(contour)
@@ -55,23 +55,19 @@ with Lepton() as camera:
 					
 				else:
 					blob_velo = np.zeros_like(cx_all)
-					print(len(cx_old))
-					print(len(cx_all))
-					print(len(cy_old))
-					print(len(cy_all))
-					print(len(blob_velo))
-					print('done')
 					for i in range(len(cx_all)):
 						blob_velo[i] = np.sqrt(np.square(cx_all[i]-cx_old[i])+np.square(cy_all[i]-cy_old[i]))
-					threshold = 6
+					threshold = 3
 					blob_velo = np.array(blob_velo, dtype=np.float32)
 					result = blob_velo[blob_velo < threshold] 
 					if len(result)>0:
 						B=0
 						R=255
+						print('CRASH DETECTED')
 					else:
 						R=0
 						B=255
+						print('ALL IS WELL')
 					cx_old = cx_all
 					cy_old = cy_all
 				
@@ -95,7 +91,7 @@ with Lepton() as camera:
 	while True:
 		
 		img = camera.grab().astype(np.float32)
-		T, threshold = cv.threshold(img, 30000, 50000, cv.THRESH_BINARY)
+		T, threshold = cv.threshold(img, 30400, 50000, cv.THRESH_BINARY)
 		img2 = 255*(img - img.min())/(img.max()-img.min())
 		imgu = img2.astype(np.uint8)
 		
@@ -112,7 +108,7 @@ with Lepton() as camera:
 		blobcopy = cv.resize(blobed, (1000,600))
 		#blobcopy2 = cv.flip(blobcopy, 1)
 		blobcopy2 = cv.flip(blobcopy, 0)
-		cv.imshow('blob', blobcopy2)
+		cv.imshow('blob', blobcopy)
 		
 		
 		if cv.waitKey(1) == 27:
