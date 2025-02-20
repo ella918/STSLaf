@@ -69,7 +69,7 @@ with Lepton() as camera:
 	while(True):
 		frame = createimage(512,512) #blank image to put labeled blobs 
 		img = camera.grab().astype(np.float32) #get image from FLIR
-		T, threshold = cv2.threshold(img, 30100, 50000, cv2.THRESH_BINARY) #threshold the temp 
+		T, threshold = cv2.threshold(img, 30400, 50000, cv2.THRESH_BINARY) #threshold the temp 
 		img2 = 255*(img - img.min())/(img.max()-img.min()) 
 		imgu = img2.astype(np.uint8)
 		
@@ -88,7 +88,7 @@ with Lepton() as camera:
 		track_colors = [(0, 255, 0), (0, 0, 255), (255, 255, 0), (127, 127, 255), (255, 0, 255), (255, 127, 255), (127, 0, 255), (127, 0, 127),(127, 10, 255), (0,255, 127)] #got rid of red so that can tell when crashes
 
 		
-		thresh = 5 #how much can the blob move for it to not think its a crash
+		thresh = 2 #how much can the blob move for it to not think its a crash
 		
 		i = len(centers) # number of blobs
 		
@@ -109,6 +109,8 @@ with Lepton() as camera:
 					if prev_position[j] is not None:
 						if abs(prev_position[j][0]-x) < thresh and abs(prev_position[j][1] - y) < thresh:
 							print(f'Bike {tracker.tracks[j].trackId} has crashed')
+						else:
+							print(f'Bike {tracker.tracks[j].trackId} is chilling')
 					prev_position[j] = (x, y)
 						
 					for k in range(len(tracker.tracks[j].trace)):
