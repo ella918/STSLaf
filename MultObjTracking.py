@@ -27,8 +27,11 @@ with Lepton() as camera:
 			cv2.fillPoly(mask, [roi_points], (255, 255, 255)) #fill mask outside of roi points
 			return mask #return the mask
 		else:
-			mask = image #if enter is pressed and nothing has been pressed then the mask is the frame 
-			return mask #return the mask 
+			 boundaries = ((0,0), (0,120), (160, 120), (160, 0))
+			 boundaries = np.array(boundaries)
+			 mask = np.zeros_like(image)
+			 cv2.fillPoly(mask, [boundaries], (255, 255, 255))#if enter is pressed and nothing has been pressed then the mask is the frame 
+			 return mask #return the mask 
 			
 	def createimage(w,h):
 		size = (w,h,1)
@@ -60,13 +63,13 @@ with Lepton() as camera:
 		else:
 			simpleblob = frame
 		return simpleblob 
-
+	prev_position = []
 	FirstRunTest = True
-	tracker = Tracker(10, 5, 5) #distance thresh, max frame skipped, max trace length
+	tracker = Tracker(20, 10, 5) #distance thresh, max frame skipped, max trace length
 	while(True):
 		frame = createimage(512,512) #blank image to put labeled blobs 
 		img = camera.grab().astype(np.float32) #get image from FLIR
-		T, threshold = cv2.threshold(img, 30050, 50000, cv2.THRESH_BINARY) #threshold the temp 
+		T, threshold = cv2.threshold(img, 30100, 50000, cv2.THRESH_BINARY) #threshold the temp 
 		img2 = 255*(img - img.min())/(img.max()-img.min()) 
 		imgu = img2.astype(np.uint8)
 		
@@ -74,7 +77,7 @@ with Lepton() as camera:
 			masku = select_roi(imgu) 
 			mask = masku.astype(np.float32)
 			FirstRunTest = False
-		if FirstRunTest is False:
+		if FirstRunTest is False and masku is not None:
 			masked = cv2.bitwise_and(threshold, mask) #merge threshold and mask once created by select_roi
 
 		masked2 = masked.astype(np.uint8)
@@ -84,27 +87,34 @@ with Lepton() as camera:
 		
 		track_colors = [(0, 255, 0), (0, 0, 255), (255, 255, 0), (127, 127, 255), (255, 0, 255), (255, 127, 255), (127, 0, 255), (127, 0, 127),(127, 10, 255), (0,255, 127)] #got rid of red so that can tell when crashes
 
+		
 		thresh = 5 #how much can the blob move for it to not think its a crash
 		
 		i = len(centers) # number of blobs
+		
 		if i > 0: #if there are any blobs 
 			tracker.update(centers) #update the tracker with the blob locations 
 			
 			for j in range(len(tracker.tracks)): #len(tracker.tracks) is the number of blobs
 				#print(tracker.tracks[j].trace) #example: deque([array([[68.92307692, 52.76923077]])], maxlen=20) 
 				if (len(tracker.tracks[j].trace) > 1): 
-					x1 = int(tracker.tracks[j].trace[-1][0,0]) #idea: rename these to x1 and y1
-					y1 = int(tracker.tracks[j].trace[-1][0,1])
-					tl = (x1-10,y1-10) #starting coordinates of rectangle 
-					br = (x1+10,y1+10) #ending coordinates of rectangle
+					x = int(tracker.tracks[j].trace[-1][0,0]) #idea: rename these to x1 and y1
+					y = int(tracker.tracks[j].trace[-1][0,1])
+					tl = (x-10,y-10) #starting coordinates of rectangle 
+					br = (x+10,y+10) #ending coordinates of rectangle
 					cv2.rectangle(frame,tl,br,track_colors[j],1) #draw rectangle 
-					cv2.putText(frame,str(tracker.tracks[j].trackId), (x1-10,y1-20),0, 0.5, track_colors[j],2) #label with which blob number
+					cv2.putText(frame,str(tracker.tracks[j].trackId), (x-10,y-20),0, 0.5, track_colors[j],2) #label with which blob number
+					if len(prev_position) < len(tracker.tracks):
+						prev_position.append(None)
+					if prev_position[j] is not None:
+						if abs(prev_position[j][0]-x) < thresh and abs(prev_position[j][1] - y) < thresh:
+							print(f'Bike {tracker.tracks[j].trackId} has crashed')
+					prev_position[j] = (x, y)
+						
 					for k in range(len(tracker.tracks[j].trace)):
 						x2 = int(tracker.tracks[j].trace[k][0,0]) #idea compare to the x and y above and if they are the same its a crash?
 						y2 = int(tracker.tracks[j].trace[k][0,1])
 						cv2.circle(frame,(x2,y2), 3, track_colors[j],-1)
-						if abs(x1 - x2) < thresh && abs(y1 - y2) < thresh:
-							print('CRASH! BIKE', j)
 					cv2.circle(frame,(x2,y2), 6, track_colors[j],-1)
 				for n in range(i):
 					cv2.circle(frame, (centers[n][0], centers[n][1]), 6, (0,0,0),-1)

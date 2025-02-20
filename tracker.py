@@ -53,7 +53,7 @@ class Tracker(object):
 		un_assigned_tracks = []
 
 		for i in range(len(assignment)):
-			print(assignment)
+			#print(assignment)
 			if assignment[i] != -1:
 				if (cost[i][assignment[i]] > self.dist_threshold):
 					assignment[i] = -1
