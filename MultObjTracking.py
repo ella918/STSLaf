@@ -130,6 +130,6 @@ def FLIRFunc():
 
     # If the user presses the Escape key (key code 27), exit the loop.
 			if k == 27:
-				break
+				return
 
   
