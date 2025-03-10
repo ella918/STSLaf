@@ -3,15 +3,15 @@ from kivy.lang import Builder
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.screenmanager import (ScreenManager, Screen, NoTransition) 
 
-from MultObjTracking.py import FLIRFunc
+#from MultObjTracking.py import FLIRFunc
 
 Builder.load_string("""
 
 <HomeScreen>:
-	id: main_win 
-    orientation: "vertical"
-    spacing: 10
-    space_x: self.size[0]/3
+	#id: main_win 
+    #orientation: "vertical"
+    #spacing: 10
+    #space_x: self.size[0]/3
   
     canvas.before: 
         Color: 
@@ -27,31 +27,31 @@ Builder.load_string("""
             font_size: 30
             size_hint: (1, .2)
             background_color: (0.1, .36, .4, .75)
-            on_press: root.manager.current = 'setup'
+            on_release: root.manager.current = 'setup'
         Button:
             text: 'Check Sensor Connection'
             font_size: 30
             size_hint: (1, .2)
             background_color: (0.1, .36, .4, .75)
-            on_press: root.manager.current = 'connection'
+            on_release: root.manager.current = 'connection'
         Button:
             text: 'Override: Crash'
             font_size: 30
             size_hint: (1, .2)
             background_color: (0.1, .36, .4, .75)
-            on_press: root.manager.current = 'crash'
+            on_release: root.manager.current = 'crash'
         Button:
             text: 'Override: No Crash'
             font_size: 30
             size_hint: (1, .2)
             background_color: (0.1, .36, .4, .75)
-            on_press: root.manager.current = 'nocrash'
+            on_release: root.manager.current = 'nocrash'
         Button:
             text: 'Stop Sensing'
             font_size: 30
             size_hint: (1, .2)
             background_color: (0.1, .36, .4, .75)
-            on_press: root.manager.current = 'stop'
+            on_release: root.manager.current = 'stop'
 
 <SetUpScreen>:
     BoxLayout:
@@ -65,7 +65,7 @@ Builder.load_string("""
             ont_size: 30
             size_hint: (1, .5)
             background_color: (0.1, .36, .4, .75)
-            on_press: root.manager.current = 'home'
+            on_release: root.manager.current = 'home'
 <ConnectionScreen>:
     BoxLayout:
         Button:
@@ -78,7 +78,7 @@ Builder.load_string("""
             ont_size: 30
             size_hint: (1, .5)
             background_color: (0.1, .36, .4, .75)
-            on_press: root.manager.current = 'home'
+            on_release: root.manager.current = 'home'
 <CrashScreen>:
     BoxLayout:
         Button:
@@ -91,7 +91,7 @@ Builder.load_string("""
             ont_size: 30
             size_hint: (1, .5)
             background_color: (0.1, .36, .4, .75)
-            on_press: root.manager.current = 'home'
+            on_release: root.manager.current = 'home'
 <NoCrashScreen>:
     BoxLayout:
         Button:
@@ -104,7 +104,7 @@ Builder.load_string("""
             ont_size: 30
             size_hint: (1, .5)
             background_color: (0.1, .36, .4, .75)
-            on_press: root.manager.current = 'home'
+            on_release: root.manager.current = 'home'
 <StopScreen>:
     BoxLayout:
         Button:
@@ -117,7 +117,7 @@ Builder.load_string("""
             ont_size: 30
             size_hint: (1, .5)
             background_color: (0.1, .36, .4, .75)
-            on_press: root.manager.current = 'home'
+            on_release: root.manager.current = 'home'
 """)
 
 # Declare both screens
@@ -128,7 +128,7 @@ class HomeScreen(Screen):
 class SetUpScreen(Screen):
     def on_enter(self):
     	print('woooo')
-    	FlirFunc()
+    	#FlirFunc()
 
 class ConnectionScreen(Screen):
     pass
