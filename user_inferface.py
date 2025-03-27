@@ -11,9 +11,14 @@ from kivy.graphics.texture import Texture
 from flirpy.camera.lepton import Lepton
 from kivy.core.window import Window
 
+from Sensing import SensingApp
+
 global camera
 camera = Lepton()
 camera.setup_video()
+
+SApp = SensingApp()
+SApp.get_camera(camera)
 
 class CameraApp(App):
    
@@ -61,11 +66,6 @@ class CameraApp(App):
             texture.blit_buffer(buffer, colorfmt='rgb', bufferfmt='ubyte')
             self.image.texture = texture
 
-class StartSensingApp(App):
-    def build(self):
-        #run the code from my program and get ROI selection to work and then run the rest of the code
-        #for the ROI need to update the location bc right now it is upside down 
-        pass
 
 Builder.load_string("""
 
@@ -197,7 +197,8 @@ class HomeScreen(Screen):
     pass
 
 class SetUpScreen(Screen):
-	pass
+	def on_enter(self):
+		SApp.run()
 
 class ConnectionScreen(Screen):
     pass
