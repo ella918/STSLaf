@@ -111,7 +111,7 @@ with Lepton() as camera:
 						if abs(prev_position[j][0]-x) < thresh and abs(prev_position[j][1] - y) < thresh:
 							print(f'Bike {tracker.tracks[j].trackId} has crashed')
 						else:
-							print(f'Bike {tracker.tracks[j].trackId} is chilling')
+							print(f'Bike {tracker.tracks[j].trackId} is active')
 					prev_position[j] = (x, y)
 						
 					for k in range(len(tracker.tracks[j].trace)):
