@@ -11,14 +11,14 @@ from kivy.graphics.texture import Texture
 from flirpy.camera.lepton import Lepton
 from kivy.core.window import Window
 
-
-#from MultObjTracking.py import FLIRFunc
+global camera
+camera = Lepton()
+camera.setup_video()
 
 class CameraApp(App):
    
         def build(self):
-            self.camera = Lepton()
-            self.camera.setup_video()
+            self.camera = camera
             self.layout = BoxLayout(orientation='vertical')
             self.image = Image()
             self.layout.add_widget(self.image)
@@ -42,15 +42,18 @@ class CameraApp(App):
     
         def back_to_home(self, instance):
             App.get_running_app().stop()
-            FLIRApp().run()
-            
+            HomeApp().run()
             
         def update(self, dt):
+            x_size = self.image.size[0]
+            y_size = self.image.size[1]
+            y_size = int(y_size)
             frame = self.camera.grab().astype(np.float32)
             img = 255*(frame - frame.min())/(frame.max()-frame.min())
             img2 = img.astype(np.uint8)
             img3 = cv2.flip(img2, 0)
-            frame_resize = cv2.resize(img3, (320,240))
+            img4 = cv2.flip(img3, 1)
+            frame_resize = cv2.resize(img4, (x_size, y_size))
             frame2 = cv2.applyColorMap(frame_resize.astype(np.uint8), cv2.COLORMAP_JET)
             buffer = cv2.cvtColor(frame2, cv2.COLOR_BGR2RGB)
             buffer = buffer.tobytes()
@@ -58,6 +61,11 @@ class CameraApp(App):
             texture.blit_buffer(buffer, colorfmt='rgb', bufferfmt='ubyte')
             self.image.texture = texture
 
+class StartSensingApp(App):
+    def build(self):
+        #run the code from my program and get ROI selection to work and then run the rest of the code
+        #for the ROI need to update the location bc right now it is upside down 
+        pass
 
 Builder.load_string("""
 
@@ -208,7 +216,7 @@ class StreamScreen(Screen):
 		CameraApp().run()
 
 
-class FLIRApp(App):
+class HomeApp(App):
 
     def build(self):
         # Create the screen manager
@@ -225,4 +233,4 @@ class FLIRApp(App):
 
 
 if __name__ == '__main__':
-    FLIRApp().run()
+    HomeApp().run()
