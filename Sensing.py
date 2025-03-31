@@ -14,8 +14,6 @@ from tracker import Tracker
 
 
 class SensingApp(App):
-	#def __init__(self, camera):
-		#self.camera = camera
 		
 	def get_camera(self, camera):
 		self.camera = camera
@@ -79,7 +77,7 @@ class SensingApp(App):
 		
 	def build(self):
 		prev_position = []
-		FirstRunTest = True
+		FirstRun = True
 		tracker = Tracker(20, 10, 5) #distance thresh, max frame skipped, max trace length
 		while(True):
 			frame = self.createimage(512,512) #blank image to put labeled blobs 
@@ -88,17 +86,17 @@ class SensingApp(App):
 			img2 = 255*(img - img.min())/(img.max()-img.min()) 
 			imgu = img2.astype(np.uint8)
 		
-			if FirstRunTest is True and imgu is not None: #if there is an image and its the first time through the loop
+			if FirstRun is True and imgu is not None: #if there is an image and its the first time through the loop
 				masku = self.select_roi(imgu) 
 				mask = masku.astype(np.float32)
-				FirstRunTest = False
-			if FirstRunTest is False and masku is not None:
+				FirstRun = False
+			if FirstRun is False and masku is not None:
 				masked = cv2.bitwise_and(threshold, mask) #merge threshold and mask once created by select_roi
 
 			masked2 = masked.astype(np.uint8)
 			centers = self.detect_objects(masked2)
 			masked3 = cv2.cvtColor(masked2, cv2.COLOR_GRAY2RGB)
-			masked3 = self.circleBlobs(centers, masked3)
+			#masked3 = self.circleBlobs(centers, masked3)
 		
 			track_colors = [(0, 255, 0), (0, 0, 255), (255, 255, 0), (127, 127, 255), (255, 0, 255), (255, 127, 255), (127, 0, 255), (127, 0, 127),(127, 10, 255), (0,255, 127)] #got rid of red so that can tell when crashes
 
@@ -117,26 +115,26 @@ class SensingApp(App):
 						y = int(tracker.tracks[j].trace[-1][0,1])
 						tl = (x-10,y-10) #starting coordinates of rectangle 
 						br = (x+10,y+10) #ending coordinates of rectangle
-						cv2.rectangle(frame,tl,br,track_colors[j],1) #draw rectangle 
-						cv2.putText(frame,str(tracker.tracks[j].trackId), (x-10,y-20),0, 0.5, track_colors[j],2) #label with which blob number
+						#cv2.rectangle(frame,tl,br,track_colors[j],1) #draw rectangle 
+						#cv2.putText(frame,str(tracker.tracks[j].trackId), (x-10,y-20),0, 0.5, track_colors[j],2) #label with which blob number
 						if len(prev_position) < len(tracker.tracks):
 							prev_position.append(None)
 						if prev_position[j] is not None:
 							if abs(prev_position[j][0]-x) < thresh and abs(prev_position[j][1] - y) < thresh:
-								print(f'Bike {tracker.tracks[j].trackId} has crashed')
-							else:
-								print(f'Bike {tracker.tracks[j].trackId} is active')
+								print('CRASH')
+							#else:
+								#print(f'Bike {tracker.tracks[j].trackId} is active')
 						prev_position[j] = (x, y)
 						
 						for k in range(len(tracker.tracks[j].trace)):
 							x2 = int(tracker.tracks[j].trace[k][0,0]) #idea compare to the x and y above and if they are the same its a crash?
 							y2 = int(tracker.tracks[j].trace[k][0,1])
-							cv2.circle(frame,(x2,y2), 3, track_colors[j],-1)
-						cv2.circle(frame,(x2,y2), 6, track_colors[j],-1)
-					for n in range(i):
-						cv2.circle(frame, (centers[n][0], centers[n][1]), 6, (0,0,0),-1)
-			cv2.imshow('image',frame)
-			cv2.imshow("blobed", masked3)
+							#cv2.circle(frame,(x2,y2), 3, track_colors[j],-1)
+						#cv2.circle(frame,(x2,y2), 6, track_colors[j],-1)
+					#for n in range(i):
+						#cv2.circle(frame, (centers[n][0], centers[n][1]), 6, (0,0,0),-1)
+			#cv2.imshow('image',frame)
+			#cv2.imshow("blobed", masked3)
 
     
     # Wait for the user to press a key (110ms delay).
@@ -145,6 +143,7 @@ class SensingApp(App):
     # If the user presses the Escape key (key code 27), exit the loop.
 			if k == 27:
 				break
+
 
   
 

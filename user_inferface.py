@@ -124,10 +124,11 @@ Builder.load_string("""
 <SetUpScreen>:
     BoxLayout:
         Button:
-            text: 'my set up button'
+            text: 'ROI Selection'
             ont_size: 30
             size_hint: (1, .5)
             background_color: (0.1, .36, .4, .75)
+            on_release: print('roi')
         Button:
             text: 'Back to home screen'
             ont_size: 30
@@ -197,6 +198,7 @@ class HomeScreen(Screen):
     pass
 
 class SetUpScreen(Screen):
+	
 	def on_enter(self):
 		SApp.run()
 
