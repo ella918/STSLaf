@@ -222,11 +222,10 @@ class StreamScreen(Screen):
 		CameraApp().run()
 
 def threadSensingTarget():
-	while True:
+	while not stopSensing:
 		SApp.update()
 
 if stopSensing:
-	sensingthread.stop()
 	print('stopped sensing')
 	
 
