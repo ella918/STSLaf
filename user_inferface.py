@@ -10,15 +10,18 @@ from kivy.clock import Clock
 from kivy.graphics.texture import Texture
 from flirpy.camera.lepton import Lepton
 from kivy.core.window import Window
+from threading import Thread
 
 from Sensing import SensingApp
 
 global camera
 camera = Lepton()
 camera.setup_video()
-
+global SApp
 SApp = SensingApp()
 SApp.get_camera(camera)
+global stopSensing
+stopSensing = False
 
 class CameraApp(App):
    
@@ -119,7 +122,7 @@ Builder.load_string("""
             font_size: 30
             size_hint: (1, .2)
             background_color: (0.1, .36, .4, .75)
-            on_release: root.manager.current = 'stop'
+            on_release: stopSensing = True
 
 <SetUpScreen>:
     BoxLayout:
@@ -200,7 +203,10 @@ class HomeScreen(Screen):
 class SetUpScreen(Screen):
 	
 	def on_enter(self):
-		SApp.run()
+		SApp.build()
+		stopSensing = False
+		sensingthread = Thread(target=threadSensingTarget)
+		sensingthread.start()
 
 class ConnectionScreen(Screen):
     pass
@@ -210,13 +216,20 @@ class CrashScreen(Screen):
 
 class NoCrashScreen(Screen):
     pass
-
-class StopScreen(Screen):
-    pass
     
 class StreamScreen(Screen):
 	def on_enter(self):
 		CameraApp().run()
+
+def threadSensingTarget():
+	while True:
+		SApp.update()
+
+if stopSensing:
+	sensingthread.stop()
+	print('stopped sensing')
+	
+
 
 
 class HomeApp(App):
@@ -229,7 +242,6 @@ class HomeApp(App):
         sm.add_widget(ConnectionScreen(name='connection'))
         sm.add_widget(CrashScreen(name='crash'))
         sm.add_widget(NoCrashScreen(name='nocrash'))
-        sm.add_widget(StopScreen(name='stop'))
         sm.add_widget(StreamScreen(name='stream'))
 
         return sm
