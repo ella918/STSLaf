@@ -80,12 +80,12 @@ class SensingApp():
 		T, threshold = cv2.threshold(img, 30400, 50000, cv2.THRESH_BINARY) #threshold the temp 
 		img2 = 255*(img - img.min())/(img.max()-img.min()) 
 		imgu = img2.astype(np.uint8)
-		if self.FirstRun is True and imgu is not None: #if there is an image and its the first time through the loop
-			self.masku = self.select_roi(imgu) 
-			self.mask = self.masku.astype(np.float32)
-			self.FirstRun = False
-		if self.FirstRun is False and self.masku is not None:
-			masked = cv2.bitwise_and(threshold, self.mask) #merge threshold and mask once created by select_roi
+		# if self.FirstRun is True and imgu is not None: #if there is an image and its the first time through the loop
+			# self.masku = self.select_roi(imgu) 
+			# self.mask = self.masku.astype(np.float32)
+			# self.FirstRun = False
+		# if self.FirstRun is False and self.masku is not None:
+		masked = cv2.bitwise_and(threshold, self.mask) #merge threshold and mask once created by select_roi
 		masked2 = masked.astype(np.uint8)
 		centers = self.detect_objects(masked2)
 		masked3 = cv2.cvtColor(masked2, cv2.COLOR_GRAY2RGB)
@@ -123,6 +123,13 @@ class SensingApp():
 	
 	def build(self):
 		self.prev_position = []
-		self.FirstRun = True
+		#self.FirstRun = True
 		self.tracker = Tracker(20, 10, 5) #distance thresh, max frame skipped, max trace length
+		frame = self.createimage(512,512) #blank image to put labeled blobs 
+		img = self.camera.grab().astype(np.float32) #get image from FLIR
+		T, threshold = cv2.threshold(img, 30400, 50000, cv2.THRESH_BINARY) #threshold the temp 
+		img2 = 255*(img - img.min())/(img.max()-img.min()) 
+		imgu = img2.astype(np.uint8)
+		self.masku = self.select_roi(imgu) 
+		self.mask = self.masku.astype(np.float32)
 

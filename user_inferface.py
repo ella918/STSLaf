@@ -11,6 +11,7 @@ from kivy.graphics.texture import Texture
 from flirpy.camera.lepton import Lepton
 from kivy.core.window import Window
 from threading import Thread
+import threading
 
 from Sensing import SensingApp
 
@@ -20,8 +21,6 @@ camera.setup_video()
 global SApp
 SApp = SensingApp()
 SApp.get_camera(camera)
-global stopSensing
-stopSensing = False
 
 class CameraApp(App):
    
@@ -122,7 +121,7 @@ Builder.load_string("""
             font_size: 30
             size_hint: (1, .2)
             background_color: (0.1, .36, .4, .75)
-            on_release: stopSensing = True
+            on_release: root.stop_thread()
 
 <SetUpScreen>:
     BoxLayout:
@@ -131,7 +130,7 @@ Builder.load_string("""
             ont_size: 30
             size_hint: (1, .5)
             background_color: (0.1, .36, .4, .75)
-            on_release: print('roi')
+            on_release: root.roi_setup()
         Button:
             text: 'Back to home screen'
             ont_size: 30
@@ -177,40 +176,46 @@ Builder.load_string("""
             size_hint: (1, .5)
             background_color: (0.1, .36, .4, .75)
             on_release: root.manager.current = 'home'
-<StopScreen>:
-    BoxLayout:
-        Button:
-            text: 'My stop sensing button'
-            ont_size: 30
-            size_hint: (1, .5)
-            background_color: (0.1, .36, .4, .75)
-        Button:
-            text: 'Back to home screen'
-            ont_size: 30
-            size_hint: (1, .5)
-            background_color: (0.1, .36, .4, .75)
-            on_release: root.manager.current = 'home'
 """)
 
 
-
-
-# Declare both screens
-
 class HomeScreen(Screen):
-    pass
+	def stop_thread(self):
+		global sensingthread
+		if sensingthread.is_alive():
+			stop_sensing_event.set()
+			sensingthread = None
+			print('stopped thread')
 
 class SetUpScreen(Screen):
-	
 	def on_enter(self):
-		SApp.build()
-		stopSensing = False
+		global sensingthread
 		sensingthread = Thread(target=threadSensingTarget)
-		sensingthread.start()
-
+		
+	def roi_setup(self):
+		global sensingthread
+		# if sensingthread is None:
+			# sensingthread = Thread(target=threadSensingTarget)
+		#if not stop_sensing_event.is_set():
+		print('setting up roi')
+		#SApp.build()
+		if not sensingthread.is_alive():
+			SApp.build()
+			stop_sensing_event.clear()
+			sensingthread.start()
+		else:
+			if sensingthread is not None and sensingthread.is_alive():
+				HomeScreen.stop_thread(self)
+				stop_sensing_event.clear()
+			SApp.build()
+			sensingthread = Thread(target=threadSensingTarget)
+			sensingthread.start()
+			print('started thread')
+			
+	
 class ConnectionScreen(Screen):
-    pass
-
+	pass
+		
 class CrashScreen(Screen):
     pass
 
@@ -220,16 +225,14 @@ class NoCrashScreen(Screen):
 class StreamScreen(Screen):
 	def on_enter(self):
 		CameraApp().run()
+		
+stop_sensing_event = threading.Event()
 
 def threadSensingTarget():
-	while not stopSensing:
+	print('thread')
+	print(stop_sensing_event.is_set())
+	while not stop_sensing_event.is_set():
 		SApp.update()
-
-if stopSensing:
-	print('stopped sensing')
-	
-
-
 
 class HomeApp(App):
 
