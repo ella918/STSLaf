@@ -23,9 +23,9 @@ global SApp
 SApp = SensingApp()
 SApp.get_camera(camera)
 global client
-client = mqtt.Client('pi/Flir')
-client.connect('10.42.0.1', 1883)
-client.loop_start()
+# client = mqtt.Client('pi/Flir')
+# client.connect('10.42.0.1', 1883)
+# client.loop_start()
 
 
 class CameraApp(App):
@@ -145,7 +145,7 @@ Builder.load_string("""
             on_release: root.manager.current = 'home'
 <ConnectionScreen>:
 	Image: 
-		source:'/home/sts/STSLaf/sts.png'
+		source:'/home/sts/STSLaf/sts_new.jpeg'
 """)
 
 
