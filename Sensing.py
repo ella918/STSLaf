@@ -13,6 +13,8 @@ from kivy.core.window import Window
 from tracker import Tracker
 from threading import Thread
 
+global crash
+
 class SensingApp():
 	def get_camera(self, camera):
 		self.camera = camera
@@ -108,7 +110,7 @@ class SensingApp():
 					if self.prev_position[j] is not None:
 						if abs(self.prev_position[j][0]-x) < thresh and abs(self.prev_position[j][1] - y) < thresh:
 							print('CRASH')
-						#else:
+							self.crash = '1'
 							#print(f'Bike {tracker.tracks[j].trackId} is active')
 					self.prev_position[j] = (x, y)
 					for k in range(len(self.tracker.tracks[j].trace)):
@@ -122,6 +124,7 @@ class SensingApp():
 		#cv2.imshow("blobed", masked3)
 	
 	def build(self):
+		self.crash = 0
 		self.prev_position = []
 		#self.FirstRun = True
 		self.tracker = Tracker(20, 10, 5) #distance thresh, max frame skipped, max trace length

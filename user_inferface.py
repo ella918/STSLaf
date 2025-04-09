@@ -12,6 +12,7 @@ from flirpy.camera.lepton import Lepton
 from kivy.core.window import Window
 from threading import Thread
 import threading
+import paho.mqtt.client as mqtt
 
 from Sensing import SensingApp
 
@@ -21,6 +22,11 @@ camera.setup_video()
 global SApp
 SApp = SensingApp()
 SApp.get_camera(camera)
+global client
+client = mqtt.Client('pi/Flir')
+client.connect('10.42.0.1', 1883)
+client.loop_start()
+
 
 class CameraApp(App):
    
@@ -72,53 +78,53 @@ class CameraApp(App):
 Builder.load_string("""
 
 <HomeScreen>:
-	#id: main_win 
-    #orientation: "vertical"
-    #spacing: 10
-    #space_x: self.size[0]/3
+	id: main_win 
+    orientation: "vertical"
+    spacing: 10
+    space_x: self.size[0]/3
   
     canvas.before: 
-        Color: 
-            rgba: (125, 14, 20, 0.74) 
+		Color:
+			rgba: 0,0,0,0.65
         Rectangle: 
-            source:'sts.png'
-            size: root.width, root.height 
-            pos: self.pos 
+            size: self.size
+            pos: self.pos
+            source: '/home/sts/STSLaf/sts.png'
 
     BoxLayout:
         Button:
             text: 'Set Up/Begin Sensing'
-            font_size: 30
+            font_size: 20
             size_hint: (1, .2)
             background_color: (0.1, .36, .4, .75)
             on_release: root.manager.current = 'setup'
         Button:
             text: 'FLIR Live Stream'
-            font_size: 30
+            font_size: 20
             size_hint: (1, .2)
             background_color: (0.1, .36, .4, .75)
             on_release: root.manager.current = 'stream'
         Button:
             text: 'Check Sensor Connection'
-            font_size: 30
+            font_size: 20
             size_hint: (1, .2)
             background_color: (0.1, .36, .4, .75)
             on_release: root.manager.current = 'connection'
         Button:
             text: 'Override: Crash'
-            font_size: 30
+            font_size: 20
             size_hint: (1, .2)
             background_color: (0.1, .36, .4, .75)
-            on_release: root.manager.current = 'crash'
+            on_release: root.override_crash()
         Button:
             text: 'Override: No Crash'
-            font_size: 30
+            font_size: 20
             size_hint: (1, .2)
             background_color: (0.1, .36, .4, .75)
-            on_release: root.manager.current = 'nocrash'
+            on_release: root.stop_thread()
         Button:
             text: 'Stop Sensing'
-            font_size: 30
+            font_size: 20
             size_hint: (1, .2)
             background_color: (0.1, .36, .4, .75)
             on_release: root.stop_thread()
@@ -138,54 +144,31 @@ Builder.load_string("""
             background_color: (0.1, .36, .4, .75)
             on_release: root.manager.current = 'home'
 <ConnectionScreen>:
-    BoxLayout:
-        Button:
-            text: 'My sensor connection button'
-            ont_size: 30
-            size_hint: (1, .5)
-            background_color: (0.1, .36, .4, .75)
-        Button:
-            text: 'Back to home screen'
-            ont_size: 30
-            size_hint: (1, .5)
-            background_color: (0.1, .36, .4, .75)
-            on_release: root.manager.current = 'home'
-<CrashScreen>:
-    BoxLayout:
-        Button:
-            text: 'My override crash button'
-            ont_size: 30
-            size_hint: (1, .5)
-            background_color: (0.1, .36, .4, .75)
-        Button:
-            text: 'Back to home screen'
-            ont_size: 30
-            size_hint: (1, .5)
-            background_color: (0.1, .36, .4, .75)
-            on_release: root.manager.current = 'home'
-<NoCrashScreen>:
-    BoxLayout:
-        Button:
-            text: 'My override: no crash button'
-            ont_size: 30
-            size_hint: (1, .5)
-            background_color: (0.1, .36, .4, .75)
-        Button:
-            text: 'Back to home screen'
-            ont_size: 30
-            size_hint: (1, .5)
-            background_color: (0.1, .36, .4, .75)
-            on_release: root.manager.current = 'home'
+	Image: 
+		source:'/home/sts/STSLaf/sts.png'
 """)
 
 
 class HomeScreen(Screen):
 	def stop_thread(self):
 		global sensingthread
-		if sensingthread.is_alive():
-			stop_sensing_event.set()
-			sensingthread = None
-			print('stopped thread')
+		if sensingthread is not None:
+			print('sensing thread exists')
+			if sensingthread.is_alive():
+				stop_sensing_event.set()
+				sensingthread = None
+				print('stopped thread')
+				SApp.crash = 0
+		else:
+			msg = '0'
+			client.publish(topic = 'pi/Flir', payload = msg.encode('utf-8'), qos=0)
+		print('turn off light')
+
+	def override_crash(self):
+		HomeScreen.stop_thread(self)
+		msg = str(1)
+		client.publish(topic = 'pi/Flir', payload = msg.encode('utf-8'), qos=0)
+		print('overriding for a crash')
 
 class SetUpScreen(Screen):
 	def on_enter(self):
@@ -194,18 +177,14 @@ class SetUpScreen(Screen):
 		
 	def roi_setup(self):
 		global sensingthread
-		# if sensingthread is None:
-			# sensingthread = Thread(target=threadSensingTarget)
-		#if not stop_sensing_event.is_set():
 		print('setting up roi')
-		#SApp.build()
 		if not sensingthread.is_alive():
 			SApp.build()
 			stop_sensing_event.clear()
 			sensingthread.start()
 		else:
 			if sensingthread is not None and sensingthread.is_alive():
-				HomeScreen.stop_thread(self)
+				HomeScreen.stop_thread()
 				stop_sensing_event.clear()
 			SApp.build()
 			sensingthread = Thread(target=threadSensingTarget)
@@ -216,11 +195,6 @@ class SetUpScreen(Screen):
 class ConnectionScreen(Screen):
 	pass
 		
-class CrashScreen(Screen):
-    pass
-
-class NoCrashScreen(Screen):
-    pass
     
 class StreamScreen(Screen):
 	def on_enter(self):
@@ -229,10 +203,12 @@ class StreamScreen(Screen):
 stop_sensing_event = threading.Event()
 
 def threadSensingTarget():
-	print('thread')
-	print(stop_sensing_event.is_set())
+	global client
+	print('thread started')
 	while not stop_sensing_event.is_set():
 		SApp.update()
+		msg = str(SApp.crash)
+		client.publish(topic = 'pi/Flir', payload = msg.encode('utf-8'), qos=0)
 
 class HomeApp(App):
 
@@ -242,10 +218,7 @@ class HomeApp(App):
         sm.add_widget(HomeScreen(name='home'))
         sm.add_widget(SetUpScreen(name='setup'))
         sm.add_widget(ConnectionScreen(name='connection'))
-        sm.add_widget(CrashScreen(name='crash'))
-        sm.add_widget(NoCrashScreen(name='nocrash'))
         sm.add_widget(StreamScreen(name='stream'))
-
         return sm
 
 
