@@ -51,18 +51,26 @@ class SensingApp():
 		return img
 			
 	def detect_objects(self, frame): #detecting objects function
-		circles = [] #empty list of box coordinates 
+		circles = [] #empty list of box coordinates f
+		f = 110.5
+		L = 49 #size of what you are trying to sense
+		H = 84 #height of flir 
+		theta = 30 #angle of flir 
 		
 		contours, hier = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE) #find contours in given frame 
 		for c in contours: #go through each contour
+			(a,b),rad = cv2.minEnclosingCircle(c)
 			mask = np.zeros_like(frame)
+			cv2.fillPoly(mask, [c], 1)
+			M = cv2.moments(mask)
+			x = int(M["m10"] / M["m00"])
+			y = int(M["m01"] / M["m00"]) 
+			alpha = y*57/120
+			ang = (theta+alpha)*np.pi/180
+			Dr = H/np.sin(ang)
+			xi = L*f/Dr
 			# Check if the contour area is larger than a threshold.
-			if cv2.contourArea(c) > 90: #if contour is big enough 
-				# Get the bounding circle coordinates.
-				cv2.fillPoly(mask, [c], 1)
-				M = cv2.moments(mask)
-				x = int(M["m10"] / M["m00"])
-				y = int(M["m01"] / M["m00"]) 
+			if 2*rad > 0.75*xi: #if contour is big enough 
 				circles.append([x, y]) #add coords to the circle coordinate list
 		circles = np.array(circles)
 		return circles #return list of coordinates 
@@ -77,11 +85,13 @@ class SensingApp():
 		return simpleblob 
 	
 	def update(self):
+		print(time.time())
+		global imgu
 		frame = self.createimage(512,512) #blank image to put labeled blobs 
 		img = self.camera.grab().astype(np.float32) #get image from FLIR
 		T, threshold = cv2.threshold(img, 30400, 50000, cv2.THRESH_BINARY) #threshold the temp 
 		img2 = 255*(img - img.min())/(img.max()-img.min()) 
-		imgu = img2.astype(np.uint8)
+		self.imgu = img2.astype(np.uint8)
 		# if self.FirstRun is True and imgu is not None: #if there is an image and its the first time through the loop
 			# self.masku = self.select_roi(imgu) 
 			# self.mask = self.masku.astype(np.float32)
@@ -135,4 +145,46 @@ class SensingApp():
 		imgu = img2.astype(np.uint8)
 		self.masku = self.select_roi(imgu) 
 		self.mask = self.masku.astype(np.float32)
+		
+	# def cameraApp(self):
+		# print('in camera app')
+		# self.layout = BoxLayout(orientation='vertical')
+		# self.image = Image()
+		# self.layout.add_widget(self.image)
+		# self.button = Button(text='Back to Home Page', size_hint=(1, 0.2))
+		# self.layout.add_widget(self.button)
+		# self.capture = None
+		# self.is_running = False
+		# return self.layout
+        
+		# def on_enter(self):
+			# print('camera app started')
+			# if self.is_running:
+				# self.is_running = False
+				# Clock.unschedule(self.update)
+			# else:
+				# print('else')
+				# self.is_running = True
+				# self.button.bind(on_press=self.back_to_home)
+				# Clock.schedule_interval(self.update, 1.0 / 30.0)
+    
+		# def back_to_home(self, instance):
+			# return
+			
+		# def update(self, dt):
+			# x_size = self.image.size[0]
+			# y_size = self.image.size[1]
+			# y_size = int(y_size)
+			# frame = self.camera.grab().astype(np.float32)
+			# img = 255*(frame - frame.min())/(frame.max()-frame.min())
+			# img2 = img.astype(np.uint8)
+			# img3 = cv2.flip(img2, 0)
+			# img4 = cv2.flip(img3, 1)
+			# frame_resize = cv2.resize(img4, (x_size, y_size))
+			# frame2 = cv2.applyColorMap(frame_resize.astype(np.uint8), cv2.COLORMAP_JET)
+			# buffer = cv2.cvtColor(frame2, cv2.COLOR_BGR2RGB)
+			# buffer = buffer.tobytes()
+			# texture = Texture.create(size=(frame_resize.shape[1], frame_resize.shape[0]), colorfmt='rgb')
+			# texture.blit_buffer(buffer, colorfmt='rgb', bufferfmt='ubyte')
+			# self.image.texture = texture
 

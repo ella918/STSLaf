@@ -23,9 +23,9 @@ global SApp
 SApp = SensingApp()
 SApp.get_camera(camera)
 global client
-# client = mqtt.Client('pi/Flir')
-# client.connect('10.42.0.1', 1883)
-# client.loop_start()
+client = mqtt.Client('pi/Flir')
+client.connect('10.42.0.1', 1883)
+client.loop_start()
 
 
 class CameraApp(App):
@@ -42,28 +42,27 @@ class CameraApp(App):
             return self.layout
         
         def on_start(self):
-           self.toggle_camera()
-    
-        def toggle_camera(self):
             if self.is_running:
                 self.is_running = False
                 Clock.unschedule(self.update)
             else:
                 self.is_running = True
                 self.button.bind(on_press=self.back_to_home)
-                Clock.schedule_interval(self.update, 1.0 / 30.0)
+                Clock.schedule_interval(self.update, 1.0 / 50.0)
     
         def back_to_home(self, instance):
             App.get_running_app().stop()
             HomeApp().run()
             
         def update(self, dt):
+            global imgu
             x_size = self.image.size[0]
             y_size = self.image.size[1]
             y_size = int(y_size)
-            frame = self.camera.grab().astype(np.float32)
-            img = 255*(frame - frame.min())/(frame.max()-frame.min())
-            img2 = img.astype(np.uint8)
+            #frame = self.camera.grab().astype(np.float32)
+            #img = 255*(frame - frame.min())/(frame.max()-frame.min())
+            #img2 = img.astype(np.uint8)
+            img2 = SApp.imgu
             img3 = cv2.flip(img2, 0)
             img4 = cv2.flip(img3, 1)
             frame_resize = cv2.resize(img4, (x_size, y_size))
@@ -121,7 +120,7 @@ Builder.load_string("""
             font_size: 20
             size_hint: (1, .2)
             background_color: (0.1, .36, .4, .75)
-            on_release: root.stop_thread()
+            on_release: root.no_crash()
         Button:
             text: 'Stop Sensing'
             font_size: 20
@@ -163,12 +162,19 @@ class HomeScreen(Screen):
 			msg = '0'
 			client.publish(topic = 'pi/Flir', payload = msg.encode('utf-8'), qos=0)
 		print('turn off light')
-
-	def override_crash(self):
-		HomeScreen.stop_thread(self)
-		msg = str(1)
+		
+	def no_crash(self):
+		SApp.crash = '0'
+		msg = str(SApp.crash)
 		client.publish(topic = 'pi/Flir', payload = msg.encode('utf-8'), qos=0)
-		print('overriding for a crash')
+		print('turning off light, override')
+		
+	def override_crash(self):
+		SApp.crash = '1'
+		msg = str(SApp.crash)
+		client.publish(topic = 'pi/Flir', payload = msg.encode('utf-8'), qos=0)
+		print('turning off light, override')
+		
 
 class SetUpScreen(Screen):
 	def on_enter(self):
